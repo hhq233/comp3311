@@ -1,0 +1,27 @@
+# COMP3311 22T1 Final Exam Q9
+# BCNF normalisation
+
+(1)
+
+
+
+(2)
+(A)
+key: AG
+not BCNF
+A->BCD has no key AG on left, so ABCD, AEFGH
+B->H, C->DE, B, C has been seperated.
+E->F has no key AG on left, so ABCD, AEGH, EF
+(B)
+key:ABD
+not BCNF
+A->CH has no key ABD on left, so ACH, ABDEFG
+D->EG has no key ABD on left, so ACH, DEG, ABDF
+B->F has no key ABD on left, so ACH, DEG, BF, ABD
+
+(C)
+key: BCF
+F->ADG has no key BCF on left, so FADG, BCEFH
+D->EH has no key BCF on left, so FADG, DEH, BCF
+
+

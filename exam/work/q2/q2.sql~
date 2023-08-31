@@ -1,0 +1,7 @@
+-- COMP3311 22T1 Final Exam Q2
+-- Beers using all three types of ingredients with at least two varieties for each of them.
+
+create or replace view q2(beer, brewery)
+as
+... your SQL code goes here ...
+;

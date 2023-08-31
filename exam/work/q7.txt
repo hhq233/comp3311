@@ -1,0 +1,53 @@
+-- COMP3311 22T1 Final Exam Q7
+-- SQL schema from ER design
+create table Person (
+    id  integer,
+    name text,
+    primary key (id)
+);
+
+create table Coach (
+    id  integer,
+    name text,
+    primary key (id),
+    foreign key (id) references Person(id)
+);
+
+create table Member (
+    id  integer,
+    name text,
+    primary key (id),
+    foreign key (id) references Person(id)
+);
+
+create table membership (
+    code integer,
+    type text,
+    price_per_year integer,
+    primary key (code)
+);
+
+create table Tranining_Class (
+    code text,
+    term text,
+    coach integer not null,
+    primary key (code),
+    foreign key (coach) references coach(id)
+);
+
+create table joins (
+    member integer,
+    membership integer,
+    discount numeric check (discount in (0,1)),
+    primary key (member, membership),
+    foreign key (member) references Member(id),
+    foreign key (membership) references membership(code) 
+);
+
+create table attend (
+    class text,
+    member integer,
+    attendance integer default 0,
+    primary key (class, member),
+    foreign key (class) references Tranining_Class(code)
+);

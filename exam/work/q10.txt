@@ -1,0 +1,14 @@
+# COMP3311 22T1 Final Exam Q10
+# Serialisability
+
+
+(A)
+yes
+
+
+
+(B)
+no
+
+
+

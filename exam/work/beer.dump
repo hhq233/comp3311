@@ -1,0 +1,3026 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.5 (Debian 13.5-0+deb11u1)
+-- Dumped by pg_dump version 13.5 (Debian 13.5-0+deb11u1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: abvvalue; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.abvvalue AS real
+	CONSTRAINT abvvalue_check CHECK (((VALUE >= (0.0)::double precision) AND (VALUE <= (100.0)::double precision)));
+
+
+--
+-- Name: containertype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.containertype AS ENUM (
+    'bottle',
+    'can',
+    'growler',
+    'keg'
+);
+
+
+--
+-- Name: ibuvalue; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.ibuvalue AS integer
+	CONSTRAINT ibuvalue_check CHECK (((VALUE >= 0) AND (VALUE <= 200)));
+
+
+--
+-- Name: ingredienttype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.ingredienttype AS ENUM (
+    'hop',
+    'grain',
+    'adjunct'
+);
+
+
+--
+-- Name: milliliters; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.milliliters AS integer
+	CONSTRAINT milliliters_check CHECK ((VALUE > 0));
+
+
+--
+-- Name: urlvalue; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.urlvalue AS text
+	CONSTRAINT urlvalue_check CHECK ((VALUE ~~ '%.%'::text));
+
+
+--
+-- Name: yearvalue; Type: DOMAIN; Schema: public; Owner: -
+--
+
+CREATE DOMAIN public.yearvalue AS integer
+	CONSTRAINT yearvalue_check CHECK (((VALUE >= 1000) AND (VALUE <= 2100)));
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: beers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.beers (
+    id integer NOT NULL,
+    name text NOT NULL,
+    brewed public.yearvalue,
+    style integer NOT NULL,
+    abv public.abvvalue NOT NULL,
+    ibu public.ibuvalue,
+    sold_in public.containertype,
+    volume public.milliliters,
+    notes text,
+    rating integer NOT NULL,
+    CONSTRAINT beers_rating_check CHECK (((rating >= 0) AND (rating <= 10)))
+);
+
+
+--
+-- Name: brewed_by; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.brewed_by (
+    beer integer NOT NULL,
+    brewery integer NOT NULL
+);
+
+
+--
+-- Name: breweries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breweries (
+    id integer NOT NULL,
+    name text NOT NULL,
+    founded public.yearvalue,
+    website public.urlvalue,
+    located_in integer NOT NULL
+);
+
+
+--
+-- Name: contains; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.contains (
+    beer integer NOT NULL,
+    ingredient integer NOT NULL
+);
+
+
+--
+-- Name: ingredients; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ingredients (
+    id integer NOT NULL,
+    itype public.ingredienttype NOT NULL,
+    name text NOT NULL
+);
+
+
+--
+-- Name: locations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.locations (
+    id integer NOT NULL,
+    country text NOT NULL,
+    region text,
+    metro text,
+    town text
+);
+
+
+--
+-- Name: styles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.styles (
+    id integer NOT NULL,
+    name text NOT NULL,
+    min_abv public.abvvalue,
+    max_abv public.abvvalue
+);
+
+
+--
+-- Data for Name: beers; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.beers (id, name, brewed, style, abv, ibu, sold_in, volume, notes, rating) FROM stdin;
+346	#100 Hopped Barley Wine	2020	235	10	80	bottle	375	\N	8
+347	0.0	2020	236	0	\N	bottle	330	\N	1
+348	1750 Export Porter	2018	237	10.5	\N	can	330	\N	8
+349	2 Solid 2 Gold	2020	238	6.5	\N	can	440	\N	7
+350	2021 Vintage Ale	2021	239	7.5	\N	bottle	355	\N	7
+351	30-G	2021	240	7	\N	can	440	single hop series	8
+352	40	2020	240	6	65	bottle	355	40th anniversary ale	7
+353	4D	2020	241	10	85	can	355	\N	9
+354	5G	2021	242	7.6	\N	can	500	\N	8
+355	A Month of Sundaes	2020	243	10	\N	can	440	\N	7
+356	A Quiet Deed	2020	244	11	\N	can	440	\N	8
+357	A Million Stars	2021	245	5.5	\N	bottle	500	\N	7
+358	Abstrakt 17	2014	237	10.9	\N	bottle	375	\N	9
+359	Abstrakt 24	2017	246	12	\N	bottle	375	\N	8
+360	Aecht Schlenkerla Rauchbier Urbock	2018	247	6.5	40	bottle	500	bock-style, smoked	8
+361	Aecht Schlenkerla Rauchbier Fastenbier	2018	247	5.5	40	bottle	500	smoked	8
+362	Acronym Abuse	2020	248	6.8	40	can	440	\N	8
+363	After Dinner Stout	2016	249	6.1	\N	bottle	500	flavoured	8
+364	Age of Aquarius	2020	248	7.5	\N	can	440	\N	7
+365	Alexander	2019	250	5.6	\N	bottle	330	aged in oak barrels	9
+366	All the Chocolate Cows	2021	243	13.7	\N	can	473	barrel-aged	8
+367	All Together Now	2020	238	6.5	\N	can	475	\N	7
+368	Amarilla Gorilla	2020	240	7.4	\N	can	475	\N	8
+369	Amarillo by Morning	2020	240	6.5	\N	can	473	wet hop	8
+370	Amber	2019	251	5	\N	can	375	\N	7
+371	Ambler IPA	2020	240	6	\N	can	440	\N	7
+372	Amplifier	2021	238	8	50	can	375	2021 GABS 6-pack	8
+373	Anniversary Ale 11	2017	237	10	\N	bottle	640	belgian-style	7
+374	Anvil of Hope	2019	252	7.5	\N	can	440	\N	8
+375	Aphatic	2019	237	9.3	\N	bottle	650	\N	6
+376	Apollo After Dark	2020	243	9.7	\N	can	440	\N	8
+377	Aro Street	2019	248	7.2	\N	can	440	\N	9
+378	Arrogant Bastard Ale	2020	253	7.2	\N	can	475	\N	8
+379	Astrolabe	2020	254	7.4	\N	can	330	\N	7
+380	Atticus Atlas	2021	252	9	\N	can	475	\N	7
+381	Australian Ale	2019	255	4.3	20	can	375	\N	6
+382	Avalanche	2021	238	6.7	\N	can	355	\N	7
+383	Aviation Cocktail	2021	256	5.1	\N	can	355	GABS 2021 6-pack	6
+384	Axe Man	2021	240	7.2	\N	can	475	\N	8
+385	Back to Cali	2020	257	7.6	\N	can	500	\N	8
+386	Bakery Banana Bread	2019	243	10.2	\N	can	473	aged in bourbon barrels	8
+387	Banana Pastry Stout	2020	258	6	\N	can	375	\N	8
+388	Barley Griffin	2020	259	4.2	20	can	375	\N	7
+389	Barley Wine	2021	235	12.9	\N	can	440	\N	8
+390	Battle of the Lords	2020	260	8.5	45	can	473	\N	8
+391	BBARIS	2019	261	12.8	\N	can	375	aged in bourbon barrels	8
+392	Be Happy	2021	262	5.7	\N	can	440	\N	9
+393	Be Kind, Rewind	2021	248	7.3	\N	can	500	\N	8
+394	Beer	2019	263	4.8	60	can	330	\N	7
+395	Belgian Style Black IPA	2013	264	7.7	\N	bottle	354	Beer Camp series	6
+396	Betamax	2021	242	7.5	\N	can	500	\N	8
+397	Ball's Falls	2021	265	4.5	\N	can	475	\N	6
+398	Bentshovel xBa	2021	266	6	\N	can	375	\N	8
+399	Berserker	2019	267	6.2	\N	can	375	\N	6
+400	Betamax	2021	242	7.5	\N	can	500	\N	8
+401	Betelgeuse	2020	268	10	\N	can	375	\N	8
+402	Bigfoot	2020	235	9.6	90	bottle	355	\N	8
+403	Big Jerry	2021	269	7.5	\N	can	375	\N	8
+404	Big Nut	2020	270	7	\N	can	375	\N	8
+405	Big Sur	2021	257	6.7	\N	can	375	\N	7
+406	Big'n Juicy NEIPA	2019	248	6	\N	can	440	\N	7
+407	BIPA 13.2 Cascade	2021	264	13.2	100	can	375	single hop	8
+408	Bishop's Best	2019	271	4.7	\N	bottle	330	\N	7
+409	Blacc Pineapple	2021	243	14.6	\N	can	375	pineapple	8
+410	Black Eyed King Imp	2018	243	12.7	\N	can	330	\N	9
+411	Black Forest	2019	261	10	\N	can	355	\N	7
+412	Black Hawk	2020	243	8.5	50	can	375	\N	8
+413	Black Spur Draught	2019	259	4.7	25	can	375	\N	4
+414	Bless the Haze	2021	242	7.2	\N	can	440	double dry-hopped	8
+415	Bling Bling	2020	272	8.5	60	can	330	\N	8
+416	Bliss	2020	236	4.5	\N	can	330	\N	6
+417	Blood Buccaneer	2021	273	9.9	\N	can	375	\N	8
+418	Blood Orange Kviek IPA	2020	240	6.5	\N	can	250	Kviek Yeast + Blood orange Flavour	4
+419	Blooshot Red IPA	2021	253	6.5	\N	can	375	\N	8
+420	Bloodshot Red IPA	2020	253	6.5	\N	can	375	\N	8
+421	Blur Vines	2020	252	8.5	\N	can	440	\N	8
+422	BOS	2021	248	7.6	\N	can	440	\N	8
+423	Botany Bay Lager	2020	236	4.3	20	can	275	\N	4
+424	Bounty Hunter	2020	249	7.3	\N	can	355	\N	6
+425	Bourbon County Stout	2016	243	14.5	\N	bottle	475	aged in bourbon barrels	8
+426	Bramble	2021	274	8.5	\N	can	440	\N	6
+427	Breakfast at Stepney	2017	275	6	18	bottle	330	coffee	7
+428	Breakfast Stout	2018	275	8.3	60	bottle	355	\N	10
+429	Breaking Bud	2019	240	6.5	50	can	475	west coast style	8
+430	Brekkie Juice	2019	240	6.7	\N	can	375	\N	7
+431	Broken Skull IPA	2021	240	6.7	\N	can	473	Steve Austin collab	7
+432	Brown	2020	276	5	\N	bottle	330	\N	7
+433	Brown	2020	277	8.1	\N	bottle	750	Colonial Barrel Project	7
+434	Bubble Farm	2019	240	6.5	\N	can	475	\N	7
+435	Bug Powder Dust	2021	262	5.4	\N	can	440	\N	7
+436	Cabin Fever	2020	278	8	\N	can	440	double dry-hopped, Pursuit of Hoppiness #5	8
+437	California IPA	2020	240	4.2	38	can	355	\N	6
+438	Campfire Stout	2019	249	6.5	\N	bottle	650	\N	7
+439	Caramel Moo-chiato	2020	279	6	\N	can	475	\N	8
+440	Caribbean Haze	2020	238	7.8	\N	can	375	\N	7
+441	Carlton Draught	2021	280	4.6	\N	can	375	\N	1
+442	Cero	2020	236	0	\N	can	330	\N	1
+443	Caramel Fudge Stout	2019	243	11.5	\N	can	330	\N	7
+444	Carlton Zero	2019	281	0	\N	bottle	330	\N	4
+445	Cashmere	2020	240	7	\N	can	355	\N	7
+446	Cashmere Cat	2020	238	6.3	30	can	375	\N	8
+447	Changing Tides	2013	235	11	65	bottle	640	\N	8
+448	Cheat Code	2021	282	10	\N	can	375	GABS 2021 6-pack	7
+449	Chocolate Hazelnut Porter	2020	283	7	\N	can	470	\N	7
+450	Chocolate Stout Nitro	2020	249	5.8	69	can	400	Nitro + Chocolate	7
+451	Citra Double IPA	2020	278	9	\N	can	440	\N	8
+452	Climate Change is a Burning Issue	2020	284	5.1	\N	can	375	\N	7
+453	Clockwork Tangerine	2020	285	4.5	\N	can	330	tangerine infused	7
+454	Cloud 9	2020	238	6.2	\N	can	375	\N	8
+455	Cluster 8	2021	272	8.8	65	can	375	\N	8
+456	Coast Haste	2020	286	8.6	51	can	473	\N	8
+457	Colossal Claude	2020	272	8.2	75	can	568	\N	8
+458	Combat Wombat	2020	287	6.7	49	can	400	Blood orange, Grapefruit	7
+459	Common Ground	2020	246	6.3	\N	can	440	\N	8
+460	Conductor's Special Reserve Porter	2019	246	9.5	45	can	440	Smoky	7
+461	Confetti Cannon	2021	242	7.3	\N	can	500	\N	8
+462	Connected	2021	238	6.8	\N	can	440	\N	8
+463	Cosmic Omnibus	2020	238	6.8	\N	can	475	\N	7
+464	Cosmic Pyrokinesis	2020	238	6.7	50	can	475	\N	8
+465	Covered in Puppies	2019	252	8.1	\N	bottle	330	\N	9
+466	Crankshaft	2020	288	5.8	35	can	375	\N	7
+467	Crunkle Sam	2019	235	10	\N	can	550	\N	7
+468	Cut the Red Wire	2021	242	7	\N	can	440	double dry-hopped	8
+469	Dabble	2018	272	8.2	20	can	355	\N	8
+470	Dad Bod	2020	259	5	35	can	330	guava	7
+471	Daisy Chained	2021	289	8.2	\N	can	440	\N	8
+472	Dankful	2020	240	7.4	\N	can	330	\N	8
+473	Dark Age	2018	243	12.3	\N	bottle	375	aged in bourbon barrels	8
+474	Dark Cherry	2020	290	7	\N	can	440	\N	7
+475	Dark Chocolate Beer	2020	291	5.2	\N	can	330	nitro	8
+476	Dark Rum Spiked Porter	2020	283	6.5	\N	can	375	\N	7
+477	Deadly Combination	2021	248	7.4	\N	can	473	\N	8
+478	Daughters of the Neptune	2020	252	9	\N	can	4404	Lactose	8
+479	Day Trip	2020	278	9	\N	can	440	\N	8
+480	Daydreaming in Spring	2020	262	5.7	0	can	440	double dry-hopped	8
+481	DDH Hi-Res	2019	278	11.1	111	can	355	double dry-hopped	8
+482	DDH Imperial IPA	2019	272	8.2	\N	can	330	double dry-hopped	7
+483	DDH Lost in Space	2021	240	6.7	\N	can	440	DDH	8
+484	DDH Nebula	2019	259	5.9	\N	can	440	double dry-hopped	7
+485	Deep Cover	2021	248	6.2	\N	can	500	\N	8
+486	Delirium Nocturnum	2020	292	8.5	\N	bottle	330	Belgian-style	8
+487	Delirium Red	2019	293	8	\N	bottle	330	Belgian-style	6
+488	Delirium Tremens	2019	294	8.5	\N	can	500	Belgian-style	8
+489	Demon Cleaner	2020	257	6.7	\N	can	375	\N	7
+490	Demon Lungs	2021	295	5.8	\N	can	375	\N	8
+491	Del Mar Pink Grapefruit Hazy IPA	2021	238	6	\N	can	440	\N	7
+492	Descent19	2019	243	10	\N	can	375	\N	7
+493	Descent20	2020	243	10	\N	can	375	\N	7
+494	Descent21	2021	261	10	\N	can	375	\N	8
+495	Desolation of S'More	2021	258	7.6	\N	can	375	\N	8
+496	Dexter's Marine Laboratory	2021	238	7.2	0	can	475	double dry-hopped	8
+497	Dia De Los Muertos	2020	261	13.7	\N	can	475	\N	8
+498	Diamond Drive	2020	252	8	60	can	475	\N	8
+499	Digital Bath	2019	248	6.5	\N	can	473	\N	7
+500	Dolce Noir	2020	243	9	\N	can	440	\N	8
+501	Dolly	2021	238	7	\N	can	500	\N	9
+502	Double Destructor	2019	278	8.3	\N	can	375	\N	7
+503	Double Dripping in Green	2021	296	10.4	\N	can	440	\N	8
+504	Double F*ck You 2021	2021	289	9.2	\N	can	440	\N	7
+505	Double Moonage	2018	278	8.2	75	can	475	\N	9
+506	Double Nectar of the Hops	2021	260	8.9	\N	can	375	\N	7
+507	Double Pernicious Weed	2021	278	10	\N	can	440	dry-hopped	8
+508	Double Queen	2020	273	8	\N	can	375	\N	8
+509	Double Red IPA	2020	273	8	\N	can	355	\N	10
+510	Double Vanilla Custard Pancake	2020	297	10.1	\N	can	440	nitro	8
+511	Double West Coast IPA	2020	278	9	\N	can	440	\N	8
+512	Down The Hill	2020	240	6	\N	can	375	\N	6
+513	Dramjet	2018	243	17.6	\N	bottle	500	\N	8
+514	Dream Cake	2020	298	8.8	\N	can	440	\N	7
+515	Dream Weaver	2019	238	7	\N	can	500	\N	7
+516	Dreaming of Oats	2020	238	7.5	40	can	440	\N	8
+517	Dry Haze	2020	299	6	\N	can	440	\N	7
+518	Duchesse Cherry	2020	300	6.8	\N	bottle	330	Flanders Red	7
+519	Dump the Trump	2019	240	7.2	\N	can	440	west coast style	7
+520	Dust from a distant Sun	2021	301	7	22	can	440	\N	8
+521	Dusty Gringo	2018	302	6.8	\N	can	440	\N	8
+522	East Coast Hazy IPA	2021	248	6.2	\N	can	440	\N	8
+523	East Coast IPA	2020	240	7	\N	can	355	\N	7
+524	Easy	2021	303	3.2	\N	can	375	\N	7
+525	Easy As Is Pretty Sweet	2020	238	6	\N	can	440	\N	8
+526	Eclipse IPA	2020	240	6.8	\N	can	375	\N	7
+527	Eclipse IPA	2021	240	8.1	\N	can	375	\N	7
+528	Edward	2019	304	5.4	\N	bottle	375	Hoppy Farmhouse Ale	6
+529	El Hefe	2021	305	7	\N	can	500	double dry-hopped	7
+530	El Patrone	2021	252	8.2	\N	can	440	\N	7
+531	Elara	2020	238	7	\N	can	440	\N	8
+532	Electric Terrain	2021	260	8	\N	can	475	\N	8
+533	Elsie's Other Udder	2018	279	7.3	\N	can	440	nitro	7
+534	Elvis Juice	2021	240	6.5	\N	can	375	\N	7
+535	Ember's IPA	2019	253	7	\N	can	440	\N	7
+536	Endless Summer	2019	252	8.4	\N	can	440	\N	7
+537	Erebus	2020	243	11.2	74	can	375	\N	7
+538	Ershaffer	2021	236	4.2	\N	can	355	Decoction	7
+539	Escape from LA	2021	248	8	\N	can	440	\N	9
+540	Escape is Fruitile	2019	240	7	\N	can	475	\N	7
+541	Evangelion (XVII Tabris)	2021	286	10	\N	can	475	\N	8
+542	Even More Jesus	2019	243	12	\N	bottle	600	\N	9
+543	Even More Coco Jesus	2019	243	12	\N	can	440	\N	9
+544	Everyone's	2020	284	6.5	\N	can	440	nitro	6
+545	Evolution IPA	2020	240	6.2	\N	can	475	\N	7
+546	Excessive Machine	2020	282	10.2	\N	can	440	\N	8
+547	EyePA	2021	240	7	55	can	375	magic eye label	8
+548	F-11.1% Jet Black IIIPA	2020	306	11.1	\N	can	440	\N	8
+549	F-11.1% Jet Red IIIPA	2020	307	11.1	\N	can	375	\N	8
+550	F/A-18% Rhino IIIIIPA	2019	308	18	\N	can	375	\N	8
+551	F/A-18% Black Rhino	2019	243	18	\N	can	375	\N	8
+552	Fanta Pants	2017	307	7.5	\N	bottle	375	\N	6
+553	Fantastic Haze	2019	272	9	40	can	355	\N	8
+554	Farm Trail Harvest	2021	246	7	\N	bottle	375	\N	8
+555	Fat Charmer	2018	309	8.3	85	bottle	640	\N	8
+556	Fat Man, Red Suit, Big Sack	2020	253	7.5	\N	can	355	\N	7
+557	Feelin' Fine	2020	242	5.9	16	can	375	\N	7
+558	Feels Good Man	2020	310	4.9	15	can	330	\N	7
+559	Filthy Dirty IPA	2020	240	7.2	\N	can	475	\N	7
+560	First Blood Orange	2021	238	7.5	\N	can	440	\N	8
+561	Flemm	2020	311	5	\N	can	375	\N	6
+562	Flight Path	2020	259	4.4	\N	can	375	\N	6
+563	Floral IPA	2012	240	5.9	\N	bottle	341	\N	8
+564	Foggy Morning	2019	312	4.5	\N	bottle	750	\N	8
+565	Fractal VicSecret/Galaxy	2020	248	6.8	\N	can	475	\N	8
+566	Freedom Unit	2020	313	10.5	\N	can	440	\N	7
+567	French Toast	2016	243	12.3	\N	bottle	330	\N	8
+568	Fresh	2021	248	7	\N	can	440	\N	8
+569	Fresh Harvest IPA	2020	240	6.5	\N	can	330	double dry-hopped	7
+570	Frozen Sea	2021	246	8.5	\N	can	375	\N	10
+571	Fruitopia (#2)	2020	238	7	\N	can	440	\N	5
+572	Fudge Dredd	2020	283	8	\N	can	355	\N	8
+573	Fudge Stout	2020	249	5	\N	can	375	\N	6
+574	Funkin Nuts	2020	240	7.5	\N	can	355	\N	7
+575	Furious IPA	2021	240	6.7	\N	can	475	\N	8
+576	Further thru the Haze	2020	278	8	\N	can	475	\N	8
+577	Galactic Space Dragon	2020	240	7	68	can	355	\N	7
+578	Galactica	2018	240	8	\N	bottle	355	\N	7
+579	Galaxy Fart Blaster	2020	314	8.5	\N	can	375	\N	4
+580	Galaxy Valley	2021	252	8	\N	can	440	\N	8
+581	Garden Snake	2021	248	6.9	\N	can	440	wet hops	8
+582	Genetically Green	2019	240	6.5	\N	can	440	double dry-hopped	8
+583	Giblin	2019	243	7.7	\N	bottle	330	\N	6
+584	Go Local Sports Team	2020	252	8	\N	can	440	\N	7
+585	Goblin Warlord	2020	315	7.5	\N	can	440	\N	7
+586	Golden Path	2020	238	4	\N	can	330	\N	6
+587	Gone Green IIPA	2021	278	8.2	\N	can	375	\N	8
+588	Good of the Public	2020	240	6.5	\N	can	475	\N	8
+589	Grain Dead	2021	257	6.7	\N	can	330	\N	7
+590	Gran Riserva Rossa	2014	316	5.2	\N	bottle	500	\N	7
+591	Grand Cru	2018	284	6	\N	bottle	330	\N	7
+592	Green Hills	2019	317	4.2	30	bottle	330	\N	6
+593	Ground Control	2020	240	7	\N	can	375	west coast style	7
+594	Groundhog Daze	2021	238	6.2	\N	can	330	\N	7
+595	Gulden Draak 9000 Quadruple	2019	318	10.5	\N	bottle	330	secondary fermentation with wine yeast	8
+596	Gulden Draak Imperial Stout	2019	243	12	\N	bottle	330	secondary fermentation with wine yeast	8
+597	Happy Little Tree	2020	276	5.8	\N	can	330	\N	6
+598	Hangry Donut Hopiscus Wheat	2020	319	5.1	19	can	330	\N	6
+599	Harry	2021	240	8.8	\N	can	500	double dry-hopped	8
+600	Haze Cake	2019	252	9	\N	can	440	\N	8
+601	Hazelnut Brown	2021	276	5.6	29	can	355	\N	7
+602	Hazelnut Brown Nectar	2019	276	5.6	\N	can	355	\N	7
+603	Hazy	2020	238	6	\N	can	375	\N	7
+604	Hazy IPA	2021	248	7.1	\N	can	440	\N	8
+605	Hazy IPA	2021	238	6.2	\N	can	375	\N	8
+606	Hazy IPA	2020	238	6.8	\N	can	500	\N	7
+607	Hazy IPA	2020	262	4.5	30	can	500	\N	8
+608	Hazy IPA	2020	238	7.2	\N	can	440	\N	8
+609	Hazy IPA	2021	238	6.2	33	can	375	\N	7
+610	Hazy Pale	2021	248	5.6	\N	can	440	\N	8
+611	Hazy Jane	2020	248	5	\N	can	375	\N	7
+612	Hazy Life	2020	260	7.8	42	can	475	\N	6
+613	Hazy Little Thing	2019	238	6.7	35	can	330	\N	7
+614	Hazy Pale	2021	259	6	\N	can	440	DDH	9
+615	Hazy Wonderland	2021	238	6.5	\N	can	375	\N	7
+616	Headliner	2020	278	8	50	can	375	\N	8
+617	Hel & Verdoemenis	2020	243	10	\N	bottle	330	\N	7
+618	High Expectations	2020	238	6.7	35	can	475	\N	7
+619	High Strangeness	2021	257	7	\N	can	375	\N	8
+620	High West Victory at Sea	2018	237	12	\N	bottle	355	aged inn whisky barrels	8
+621	Hill People Milk	2021	320	6.8	\N	can	500	lactose	8
+622	Hitachino Nest Red Rice Ale	2020	255	7	17	bottle	375	\N	8
+623	Hocus Pocus	2018	248	6.2	\N	can	375	\N	7
+624	Holey Dollar	2020	240	6.3	\N	can	375	\N	7
+625	Holmes Brew	2020	321	5.2	\N	can	440	Wet Hop	7
+626	Honey Ma Gold	2020	255	6.7	\N	can	330	\N	7
+627	Hop Champagne	2020	322	6.5	\N	can	330	\N	8
+628	Hop Enforcer	2021	264	6	\N	can	440	\N	8
+629	Hop Hype Eclipse	2020	323	5.1	\N	can	375	\N	4
+630	Hop Storm	2020	248	6.7	\N	can	375	\N	7
+631	Hop Zombie[R]	2020	296	10	\N	can	440	\N	8
+632	Hops-in-a-Can	2020	282	10.5	75	can	475	\N	10
+633	Hoptimum	2020	296	11	100	bottle	375	\N	9
+634	Hot Wax	2021	248	8.2	\N	can	500	\N	8
+635	Howler	2018	324	4.5	\N	bottle	330	\N	7
+636	How's it Gosen?	2019	325	4	\N	can	375	\N	5
+637	How's it Gosen? (Cherry)	2020	325	4	\N	can	375	\N	5
+638	HPA-016	2020	240	6.3	\N	can	375	single hop	8
+639	Hr Fredriksen	2020	243	10.5	\N	can	440	\N	8
+640	Hua Haze	2020	248	6	23	can	460	\N	8
+641	Huge Arker	2019	243	13.5	\N	bottle	650	aged in bourbon barrels	9
+642	Huge Arker	2019	243	15.5	\N	can	330	aged in bourbon barrels	9
+643	Hummingbird	2020	252	9	\N	can	440	\N	8
+644	Hunt for Red Velvet	2020	307	9	62	can	375	\N	8
+645	Hyperborea Hazy	2020	238	6.1	\N	can	375	Mutation #004	7
+646	Hypehopopotamus	2020	248	7.1	\N	can	500	All NZ hops	8
+647	Idaho Picnic	2020	259	5.8	35	can	500	\N	8
+648	Imperial Grapefruit Sour	2020	256	7	\N	can	375	\N	8
+649	Imperial Stout	2021	243	8.5	\N	can	375	\N	8
+650	Imperial Stout	2015	243	12.1	55	bottle	750	Rare Breed series, barrel aged	8
+651	Imperial Tart Blueberry Sour	2020	256	7	\N	can	375	\N	7
+652	Imperial IPA	2020	272	9	\N	can	440	\N	6
+653	Imperial Simco Slacker	2019	240	7.5	\N	can	473	\N	8
+654	India Pale Ale	2021	240	7.2	\N	can	440	\N	8
+655	India Red Ale	2019	326	7.9	60	can	375	\N	8
+656	Inquest	2021	243	10	\N	can	375	\N	8
+657	IOU	2021	240	7.7	\N	can	440	double dry-hopped	8
+658	IPA	2020	240	7.2	\N	can	450	west coast style	8
+659	IPA	2019	240	6.3	45	can	375	\N	4
+660	IPA	2020	240	5.4	\N	can	375	\N	7
+661	Imperial Mango Sour	2020	256	7	\N	can	375	\N	7
+662	Imperial Pink Grapefruit Sour	2020	256	7	\N	can	375	\N	7
+663	India Red Ale	2019	273	7.9	60	can	375	\N	8
+664	Intergalatic Lovechild	2020	278	8	\N	can	440	Sour + Hazy	8
+665	Jasmine IPA	2019	240	5.8	\N	can	330	\N	7
+666	Joose Pary Hazy	2020	262	5.3	\N	can	330	\N	8
+667	Juice Box	2019	240	5.9	56	can	500	\N	7
+668	Juice Junkie Mosaic	2021	238	7.3	\N	can	375	triple dry-hopped, mango	8
+669	Juice Stand	2019	238	6.7	\N	can	330	\N	7
+670	Juicy Boys	2021	248	6.5	\N	can	440	double dry-hopped	7
+671	Jumping the Shark 2013	2013	243	15.4	\N	bottle	375	aged in cognac barrels	10
+672	Jumping the Shark 2015	2015	327	18.4	\N	bottle	375	aged in rye whisky barrels	10
+673	Jumping the Shark 2019	2019	243	12.1	\N	bottle	375	aged in maple syrup barrels	10
+674	Jumping the Shark 2021	2021	243	12.6	25	bottle	375	rum-barrel aged	8
+675	JUNEIPA	2020	248	6.2	7	can	375	\N	8
+676	Kamchatka	2019	328	6.1	\N	can	330	\N	7
+677	Karaoke Cowboy	2021	260	8	\N	can	440	\N	4
+678	Kellogs Corn Flakes	2019	329	6.4	\N	can	375	nitro	8
+679	Keyboard Warrior	2020	282	10	\N	can	440	\N	8
+680	King Sue	2020	260	7.8	50	can	475	\N	8
+681	Kook	2021	278	8.5	\N	can	475	\N	8
+682	Korben D	2019	278	8.5	\N	can	375	\N	8
+683	Kurtz's Insane IPA	2020	240	7.1	102	can	330	\N	8
+684	Lager	2019	236	4.6	15	can	375	\N	4
+685	Lager	2021	236	4.6	\N	can	355	\N	5
+686	Laid Back	2020	238	6.7	\N	can	440	\N	7
+687	Lark Barrel-aged Imperial JSP III	2020	237	12.8	\N	can	440	aged in smoked whiskey barrels	10
+688	Legacy Stout	2021	243	12.1	\N	can	330	\N	8
+689	Lezajsk	2016	236	5.2	\N	bottle	500	\N	6
+690	Little Tripel	2019	330	9	\N	bottle	330	\N	8
+691	Liquid Cocoa	2021	329	10.1	\N	can	440	too sweet	6
+692	Liquid Lactose	2021	329	8.5	\N	can	440	nitro, too sweet	4
+693	Lizard's Mouth	2019	272	9	\N	can	330	\N	8
+694	Lloyd	2021	257	8.2	\N	can	500	\N	8
+695	London Porter	2021	283	6	\N	can	375	\N	8
+696	Lordag	2021	248	8	\N	can	440	\N	7
+697	Love Tap	2018	236	5	\N	bottle	330	\N	6
+698	Luchador at Sunrise	2021	243	10.5	\N	can	473	bourbon barrel aged	8
+699	Luna	2020	331	4.8	\N	can	375	\N	6
+700	Lunar Eclipse Lager	2020	271	5	\N	can	375	Eclipse hops	7
+701	Luped In IPA	2019	240	6.5	\N	can	355	\N	8
+702	Lupulin Effect	2019	278	8.5	\N	can	440	\N	7
+703	Lupulin Fog	2019	260	8.5	\N	can	375	\N	8
+704	Lupus The Wolf Man	2020	278	9	\N	can	440	\N	8
+705	Magic Carpet Midnight Ride	2018	243	9	\N	bottle	500	\N	7
+706	Magical Christmas Unicorn	2019	332	7	\N	bottle	330	\N	8
+707	Major Mac	2020	279	6	\N	can	375	Spiced Fig and Coconut	6
+708	Mandarina Meine Liebe	2020	278	9	\N	can	440	\N	8
+709	Mango Oat Cream	2020	240	6.5	\N	can	440	double dry-hopped	6
+710	Maple Banana Split Your Pants	2021	333	7.2	\N	can	375	2021 GABS 6-pack	1
+711	Mape Coffee Reserve	2021	258	13.2	\N	can	375	bourbon barrel aged	8
+712	Market Sour Blood Orange and Saltbush	2020	256	4.5	\N	can	375	\N	5
+713	Mars Attacks	2021	334	5.3	\N	can	500	\N	6
+714	Matcha IPA	2019	240	8.5	\N	bottle	330	Matcha	8
+715	Matured Stout	2018	249	5	\N	can	355	\N	7
+716	Matt	2016	239	12.5	\N	bottle	355	\N	10
+717	Mayberry IPA	2021	257	7.2	\N	can	473	\N	7
+718	Mega Hornet	2020	296	11	70	can	375	\N	8
+719	Mega-Hop	2019	278	8.3	\N	can	375	\N	6
+720	Melbourne Fog	2020	262	4.8	\N	can	375	double dry-hopped	7
+721	Mellow Mood	2021	335	7.3	\N	can	440	looks like carrot juice	7
+722	Mexican Hot Chcolate Stout	2021	249	6.7	30	can	375	\N	7
+723	M.I.A.	2020	240	6.5	\N	can	375	\N	6
+724	Midwinter	2020	283	8.2	\N	can	440	Vanilla	8
+725	Mind Fuzz	2020	240	6.2	\N	can	475	\N	7
+726	Mind Haze	2019	238	6.2	30	can	355	\N	7
+727	Mirror	2021	248	6.2	\N	can	440	\N	8
+728	Mirror Universe	2020	238	7	\N	can	475	\N	8
+729	Mmmm ... Donuts	2018	336	6.9	\N	bottle	500	\N	8
+730	Mocha Chocolate Ya Ya	2019	279	5.1	\N	can	330	coffee caramel	6
+731	Moinette Brune	2020	337	8.5	\N	bottle	330	belgian	7
+732	Money	2021	240	7.3	\N	can	475	double dry-hopped	8
+733	Monks' Reserve Ale	2019	338	10.2	\N	bottle	355	trappist	8
+734	Mooi and Meedogenloos	2018	243	11.2	\N	bottle	330	bourbon barrel aged	8
+735	Moon Dancer	2020	238	7	\N	can	375	\N	8
+736	Moon Dust Stout	2021	249	5.6	\N	can	355	\N	8
+737	Moralitie	2017	239	6.9	\N	bottle	341	\N	7
+738	Morning Cuppa	2021	249	6.2	\N	can	440	Breakfast stout	8
+739	Mosaic	2020	240	7	\N	can	355	\N	8
+740	Mosaic Mango Sour	2020	256	4.5	\N	can	250	Mango Flavoured	4
+741	Motalus	2021	240	8.1	\N	can	375	\N	8
+742	Mother of All Storms	2016	235	14	40	bottle	650	aged in bourbon barrels	8
+743	Mr Fruju	2019	248	6	\N	can	375	\N	7
+744	MSG	2020	242	6.9	\N	can	500	\N	8
+745	Mudgee Mud	2018	243	8.5	\N	bottle	750	\N	6
+746	Mysterio	2018	272	9	100	bottle	330	\N	8
+747	My Antonia	2019	339	7.9	76	bottle	330	\N	7
+748	Myway	2020	240	5.9	\N	can	375	Grapefruit	6
+749	Nancy	2021	242	7	\N	can	500	\N	8
+750	Narwhal (BA)	2019	243	11.5	\N	can	475	aged in bourbon barrels	10
+751	Natt	2018	237	10	\N	bottle	330	\N	7
+752	Nectaron	2020	278	8.5	\N	bottle	500	\N	7
+753	NEeD vol.1	2020	252	7.6	\N	can	440	\N	8
+754	NEeD vol.2	2020	257	6.9	\N	can	440	\N	8
+755	Neverending Haze	2020	238	4	\N	can	355	\N	7
+756	New Day, New Brew	2021	240	7.3	\N	can	440	double dry-hopped	9
+757	New World IPA	2019	240	6.5	40	can	440	\N	6
+758	Nice Cola	2020	256	6	\N	can	440	Cola flavour	4
+759	Nitro Magical Christmas Unicorn	2020	332	7.3	\N	can	355	\N	7
+760	No Dreams Til Brooklyn	2020	248	8.5	\N	can	440	Oats	9
+761	Noa (Pecan Mud)	2019	243	11	\N	bottle	330	bourbon barrel aged	10
+762	Nooner	2017	265	4.8	40	bottle	341	\N	6
+763	Nort	2020	236	0	\N	bottle	330	\N	3
+764	Not the Most Stable Genius	2020	238	7.2	\N	can	440	\N	8
+765	Num Num Juice	2021	252	7.8	\N	can	500	\N	8
+766	Nut Brown Ale	2020	276	5	\N	bottle	550	\N	7
+767	Oaked Guava DIPA	2021	278	8	68	can	375	oak,guava	6
+768	Oakey Dokey Stout	2020	249	8	\N	can	440	Oak Aged	8
+769	Oat & About	2021	272	8	\N	can	375	oat cream	8
+770	Oat Cream	2020	238	7	\N	can	375	\N	7
+771	Oat Cream India Pale Ale	2021	240	6.7	20	can	440	\N	7
+772	Oatmeal Stout	2020	275	7.9	\N	can	375	\N	7
+773	Oatmeal Stout	2012	243	9	\N	bottle	341	Beer Camp series	8
+774	Oceanna	2020	304	3.5	\N	can	330	Raspberry	6
+775	October Beer	2017	291	9.4	50	bottle	500	Aged in Starward Whisky Barrels	8
+776	Off the Wagon Wheel	2020	283	5.8	\N	can	440	Chocolate,vanilla,coconut,raspberry	6
+777	Ogden Nash's Pash Rash	2020	243	8.2	\N	can	440	Raspberry candy	8
+778	Oh-J	2020	260	8.1	\N	can	475	\N	7
+779	Oktoberfest	2017	334	6.1	30	bottle	341	\N	7
+780	Ola Dubh	2016	239	8	\N	bottle	330	whisky barrel aged	9
+781	Old Man Yells at Cloud	2020	260	9	\N	can	375	\N	8
+782	Old No 38	2018	249	5.4	53	bottle	355	\N	8
+783	Old School	2021	257	6.8	60	can	375	\N	7
+784	On the Fence	2021	257	7.2	\N	can	440	\N	8
+785	Once More into the Fray	2019	243	13.3	\N	can	440	aged in bourbon barrels	8
+786	One Draw	2021	238	6.7	\N	can	440	\N	8
+787	ONI	2020	240	7.1	65	can	440	citrus infused	6
+788	Onyx Amburana	2019	340	11	\N	bottle	330	wood barrel aged	7
+789	Orderville	2019	238	7.2	\N	can	475	\N	8
+790	Orval	2019	341	6.2	\N	bottle	330	dry-hopped, trappist	8
+791	Outdoor Escape	2020	240	7.2	\N	can	475	\N	8
+792	Pacific Red Ale	2019	253	5.8	\N	can	440	\N	7
+793	Pale Ale	2021	259	5	\N	can	375	\N	6
+794	Pale Ale	2021	259	5	\N	can	355	\N	8
+795	Pale Ale	2020	259	5.5	38	bottle	330	\N	7
+796	Pale Ale	2021	259	5	\N	can	355	classic	8
+797	Paradox Heaven Hill	2019	243	15	\N	bottle	330	Aged in Heaven Hill bourbon barrels	9
+798	Party and Bullshit	2019	248	6.2	\N	can	330	\N	7
+799	Party Crasher	2020	248	5.5	\N	can	475	\N	8
+800	Passion Victim	2019	262	5	\N	can	330	\N	6
+801	Passion Wolf	2021	238	7	\N	can	350	\N	7
+802	PC	2021	257	7.1	\N	can	500	\N	8
+803	Peaches and S'Cream	2020	320	7.5	20	can	355	peaches	8
+804	Peak Conditions	2019	278	8.2	22	can	355	Hazy	8
+805	Peanut Butter Pastry Stout	2020	258	6	\N	can	375	\N	7
+806	Peche Mortel	2016	342	9.5	\N	bottle	341	coffee	8
+807	Pernicious Weed	2020	278	8	\N	can	330	\N	6
+808	Persian Princess	2021	258	13	\N	can	375	Turkish Delight	9
+809	Philosophy and Velocity	2020	343	11.5	\N	can	475	\N	8
+810	Pilsner	2020	263	5	60	can	375	\N	7
+811	Pine Shoot	2020	248	6.5	\N	can	440	pine shoots	8
+812	Player 1	2021	257	6.7	\N	can	440	\N	8
+813	Player 2	2021	248	6.7	\N	can	440	\N	8
+814	Pompei	2020	248	5.8	60	can	475	mosaic	7
+815	Poolside	2020	278	8.5	\N	can	475	\N	8
+816	Popular Octopus Session	2021	240	6.3	\N	can	375	random name series	8
+817	Porter	2018	283	6	\N	can	375	\N	7
+818	Potts Point	2020	283	5.5	\N	can	375	\N	7
+819	Private Idaho	2020	238	6.3	\N	can	440	\N	8
+820	Progress	2021	238	7.3	\N	can	440	double dry-hopped	8
+821	Pseudo Sue	2020	259	5.8	45	can	475	citra	8
+822	Pumpkin Spiced Latte Ale	2020	239	8	\N	can	440	\N	6
+823	Punch and Juicy II	2021	238	6.8	\N	can	375	tries to be a fruit punch?	8
+824	Punk IPA	2020	240	5.1	\N	can	375	Brewed in Brisbane	7
+825	Pursuit of Hoppiness	2020	238	7	\N	can	440	single hop	6
+826	Pyrmont	2019	344	6.5	\N	can	355	\N	7
+827	Quadzilla	2020	259	5.6	\N	can	440	Quadruple Hopped	8
+828	Quarantine Dreams	2020	248	8.1	44	can	475	\N	8
+829	Queen of the Damned	2019	253	6.2	\N	can	375	\N	7
+830	Quest	2021	248	6.9	\N	can	500	single-hop	8
+831	Racer X	2019	278	8.3	\N	can	475	\N	8
+832	Radiator	2021	249	6.4	\N	can	355	\N	7
+833	Rain Shadow	2016	243	10	\N	bottle	330	\N	7
+834	Rainbows Are Real	2020	238	6.8	\N	can	375	\N	7
+835	Ramjet	2018	243	10.6	\N	bottle	330	aged in whisky barrels	8
+836	Red Bellied Black	2021	307	12.3	\N	can	375	\N	9
+837	Red IPA	2021	253	6	50	can	375	\N	8
+838	Red Nut	2020	253	7.1	56	can	375	\N	9
+839	Red Racer	2020	240	6.5	\N	can	500	\N	8
+840	Red Right Hand	2019	307	6.9	\N	can	375	\N	6
+841	Red Rye IPA	2019	240	6	\N	can	375	Rye	6
+842	Red Rye-ot	2020	345	5.5	\N	can	375	\N	7
+843	Red Sheet	2021	307	8	\N	can	440	\N	8
+844	Redliner IIRA	2020	346	8.5	65	can	375	\N	8
+845	Reeferendum	2020	238	6.9	\N	can	440	\N	9
+846	Refreshing Ale	2020	259	4.2	20	can	375	\N	4
+847	Revision IPA	2020	240	6.5	50	can	355	tastes like a 2nd-rate Sculpin	7
+848	Ripple Effect	2021	238	7.2	\N	can	440	\N	8
+849	Road Conan	2021	240	7	\N	can	440	\N	7
+850	Road Tripper	2020	278	8.1	\N	can	375	west coast style	7
+851	Rock Paper Scissors	2020	248	6.2	\N	can	440	\N	8
+852	Rodenbach Vintage 2017	2017	250	7	\N	bottle	375	oak-barrel aged	7
+853	Romeo and Juliet	2021	278	8	\N	can	375	\N	7
+854	Route des Epices	2017	347	5.3	\N	bottle	341	peppercorns	7
+855	Royal Fang	2020	253	6.1	\N	can	440	\N	7
+856	Royal Fresh	2020	272	9	70	can	568	\N	8
+857	Russian Imperial Stout	2021	261	10.1	\N	can	440	\N	7
+858	Rusted On	2020	253	7.3	\N	can	440	\N	7
+859	S.H.I.T. (Black Damnation 8)	2021	270	13	150	bottle	330	bourbon barrel aged	6
+860	Sabro IPA	2020	240	7.2	\N	can	375	\N	7
+861	Sabro IPA	2020	240	6.1	\N	can	375	single hop	6
+862	Saison	2019	304	6.2	\N	can	375	\N	9
+863	Saison Dupont	2020	304	6.5	\N	bottle	740	\N	9
+864	Saison Dupont Cuvee Dry Hopping	2020	304	6.5	\N	bottle	330	dry-hopped	7
+865	Salted Caramel Brown Ale	2020	276	4.5	\N	can	375	nitro	6
+866	Salted Caramel Hazy IIIPA	2021	282	11.3	\N	can	375	\N	8
+867	Samichlaus	1994	348	14	20	bottle	250	\N	7
+868	Schorschbock	2009	349	41	\N	bottle	355	\N	6
+869	Scotch Ale	2016	350	6.4	\N	bottle	300	\N	8
+870	Scrimshaw	2019	351	5.8	\N	can	330	\N	6
+871	Sculpin	2019	240	7	70	can	355	west coast style	10
+872	Sequoia	2018	352	6	\N	can	375	\N	7
+873	Seven C's	2021	240	7.4	\N	can	440	West Coast	7
+874	Shake and Shimmy	2019	238	6.3	\N	bottle	500	\N	7
+875	Shake Down	2020	353	6	\N	can	440	\N	7
+876	SFO	2021	240	6.5	\N	can	440	\N	7
+877	Simple Coercion	2021	262	5	\N	can	375	\N	7
+878	Single Hop India Saison	2021	304	7.2	60	can	375	\N	7
+879	Sink the Bismarck	2010	272	41	\N	bottle	375	freeze distilled	10
+880	Six Four Four	2021	240	8.2	\N	can	440	double dry-hopped	8
+881	Sizpence	2021	238	6.8	\N	can	440	\N	8
+882	Slay Ride	2020	243	10.4	\N	can	330	\N	7
+883	Slick Rick	2021	253	6.2	54	can	375	\N	7
+884	Smalltowner	2019	278	7.9	72	can	375	\N	7
+885	Snot Block	2020	240	6	35	can	440	nitro	7
+886	Snow Wit	2018	354	5.3	\N	bottle	355	\N	6
+887	Softly Spoken Magic Spells	2020	260	8.6	\N	can	475	\N	7
+888	Sonic Boom	2020	278	7.8	\N	can	440	\N	7
+889	Sour Brett Ale	2018	355	5.8	\N	bottle	750	brettanomyces	7
+890	Sour Red	2020	356	4.9	\N	can	355	\N	6
+891	S.P.X	2019	357	9	\N	bottle	330	aged in Pedro Ximinez barrels	8
+892	Space Joose	2020	238	6.5	\N	can	440	\N	8
+893	Spawn of Yaga	2020	243	12	\N	can	473	\N	8
+894	Spectrum	2021	240	6	\N	can	440	double dry-hopped	8
+895	Splicer	2020	285	4.4	\N	can	375	\N	8
+896	Sprocket	2020	240	7	45	can	375	\N	8
+897	St Phoebe	2019	312	5.6	\N	bottle	375	raspberries	6
+898	Status Quo	2020	358	5.6	\N	can	355	\N	8
+899	Sticky Date	2021	249	7.5	20	can	355	Caramel	7
+900	Sticky Icky	2021	238	7.8	\N	can	500	\N	8
+901	Strange Brew	2020	242	7	15	can	375	\N	7
+902	Strata Amarillo	2019	240	7	\N	can	355	\N	7
+903	Stratascope	2020	248	6.9	\N	can	440	double dry-hopped	8
+904	StreetX	2019	248	6	\N	can	375	\N	7
+905	Stubborn Russian	2016	243	10	\N	bottle	330	\N	8
+906	Sundae Beer	2021	238	7.5	\N	can	375	2021 GABS 6-pack	4
+907	Sunny Boy	2020	359	9	\N	can	375	Orange	8
+908	Sunny Boy 2.0	2021	359	9	\N	can	375	Pine/Lime	4
+909	Sunrise Valley	2020	238	8	\N	can	440	\N	10
+910	Sunset Ale	2020	251	4.6	\N	bottle	330	\N	8
+911	Sunsine & Opportunity	2020	360	5.6	\N	can	473	barrel-aged	7
+912	Super Ghouls	2020	238	6.5	\N	can	473	\N	8
+913	Super Juicy	2019	248	7.2	35	can	375	\N	8
+914	Red Racer Super Solar IPA	2020	240	6	\N	can	500	\N	8
+915	Supertrooper	2020	361	10	30	can	440	\N	8
+916	Swami's IPA	2021	240	6.8	\N	can	475	\N	7
+917	Swerve City	2020	240	6.6	\N	can	475	POG	8
+918	T-3020 IPA	2020	240	7.2	71	can	440	\N	8
+919	Taco Cerveza	2020	259	5.2	\N	bottle	330	\N	6
+920	Tactical Nuclear Penguin	2010	349	32	\N	bottle	375	freeze distilled	10
+921	Taddy Porter	2020	283	5	\N	bottle	550	\N	7
+922	Talk to the Hand	2019	240	5.8	\N	can	440	\N	7
+923	Talus	2020	240	6	\N	can	375	single hop	8
+924	Tempest	2020	252	8.8	\N	can	440	\N	8
+925	Tequila Queen	2020	362	7	\N	can	500	oak aged	5
+926	Tesselation	2020	278	8.1	\N	can	475	\N	7
+927	The Abyss	2020	243	11.7	68	bottle	355	\N	8
+928	The Almighty	2020	272	8.5	100	can	440	\N	7
+929	The Big Bad Wolf	2020	363	10	\N	can	440	nitro	8
+930	The Big Kahuna	2019	276	4.6	\N	can	440	\N	6
+931	The Dank	2018	278	9	\N	can	440	\N	8
+932	The Dawn	2019	260	9	0	can	375	\N	7
+933	The Detective	2021	252	8	\N	can	355	\N	8
+934	The Druid	2019	318	10	\N	bottle	330	barrel-aged	8
+935	The Duke of Chifley	2020	235	12.2	\N	bottle	650	aged in Starward whisky barrels	8
+936	The Eagle	2021	296	12	\N	can	375	\N	7
+937	The Future is Bright	2019	240	6.6	\N	can	440	Solar Powered	7
+938	The Harvest	2019	240	6	\N	bottle	330	fresh hop ipa	6
+939	The Hop King	2020	240	6.2	\N	can	440	\N	8
+940	The Hops Awaken	2021	257	6	\N	can	440	\N	8
+941	The Kalash	2021	261	10.7	\N	can	440	\N	8
+942	The Pav is Ours	2020	259	5.5	\N	can	330	\N	6
+943	The Second Horseman	2020	243	10	\N	can	440	\N	8
+944	The Toques of Hazzard	2020	278	9.2	76	can	475	malty	8
+945	The Yamburglar	2019	364	7.8	\N	can	375	\N	7
+946	This is Foggin Unreal	2020	238	6.8	\N	can	475	double dry-hopped	7
+947	This is Your Captain Speaking	2021	248	7.5	60	can	435	\N	8
+948	Three Philosophers	2019	365	9.7	\N	bottle	355	\N	7
+949	Thunder Hammer	2020	272	8	\N	can	440	kviek yeast	8
+950	Tim Tam Slam	2019	279	6	\N	bottle	330	\N	7
+951	Timothy Tamothy Slamothy	2019	279	6.5	\N	can	330	\N	7
+952	To Bee or not to Bee	2021	264	6.1	\N	can	375	\N	7
+953	Toast	2021	249	9	\N	can	500	coconut	8
+954	Toasted Marshmallow and Salted Caramel Pecan Mudcake	2021	363	10	\N	can	440	nitro	8
+955	Tonya	2021	366	7	\N	can	500	lactose	8
+956	Tooheys New	2021	280	4.6	\N	bottle	375	\N	1
+957	Torpedo	2018	367	7.2	65	bottle	341	\N	8
+958	Total Eclipse of the Hop	2020	285	5.5	\N	can	375	\N	7
+959	Tors Hammar	2019	235	13.2	\N	bottle	330	\N	8
+960	Trail Ale	2019	259	3.5	20	can	375	\N	4
+961	Trappist Ale	2020	368	6.2	\N	bottle	300	trappist	7
+962	Trappistes Rochefort 8	2018	292	9.2	\N	bottle	330	Belgian	8
+963	Trappistes Rochefort 10	2018	318	11.3	\N	bottle	330	Belgian	8
+964	Treatise of Light	2020	238	6.7	\N	can	500	\N	7
+965	Trinity	2021	238	6.5	\N	can	440	triple dry-hopped	8
+966	Trinity Porter	2020	369	4.8	60	can	440	\N	6
+967	Triple Crush	2021	282	10	\N	can	500	\N	7
+968	Trippy Hippy's Voodoo Gold	2019	370	5.6	\N	can	440	\N	8
+969	Tropical Brut IPA	2020	371	6.5	\N	can	330	\N	7
+970	Twist and Stout	2021	258	6.5	43	can	355	\N	7
+971	Twisted Fate	2020	272	8	\N	can	440	double dry-hopped	8
+972	Un Poco Loco	2020	242	6.5	\N	can	440	\N	7
+973	Under the Topical Sun	2019	372	4	\N	can	375	\N	6
+974	Union Jack	2020	240	7	60	can	355	\N	7
+975	Uptown Craft Lager	2021	236	0.5	16	can	375	low alcohol	4
+976	Ursa Major	2020	373	5.2	40	can	440	\N	7
+977	Vampyre Lovers	2021	253	8	\N	can	375	\N	7
+978	Variations on a Theme IV	2020	374	8	\N	can	440	\N	8
+979	Victoria Bitter (VB)	2021	280	4.9	\N	bottle	375	\N	1
+980	Victory at Sea	2019	237	10	\N	bottle	355	\N	10
+981	Vienneipa	2021	375	6.5	20	can	355	lactose	8
+982	Viscosiraptor	2020	235	10.1	80	can	375	\N	7
+983	Viva La Beaver (BA)	2019	376	12.5	\N	bottle	500	aged in rye whisky barrels	7
+984	Voodoo IPA	2019	240	6.5	55	bottle	330	\N	6
+985	VoodooRanger	2021	240	6.8	\N	can	355	brewed in Aus	7
+986	Wanderlust	2021	248	7	\N	can	355	GABS 2021 6-pack	8
+987	Warning- May Contain Traces of Panther	2020	283	6.5	\N	can	375	\N	7
+988	Wasabi Sumo	2021	278	9	80	can	375	\N	7
+989	Water Buffalo	2021	276	6	\N	can	375	\N	8
+990	Wattleseed Brown Ale	2020	276	5	\N	can	440	\N	7
+991	Wavelength	2019	240	6.5	\N	can	475	\N	7
+992	Weaponized	2020	257	7	\N	can	440	\N	7
+993	Welcome to the Exterience	2021	377	6.7	\N	can	440	\N	8
+994	West Coast	2021	257	7	\N	can	375	\N	8
+995	West Coast IPA	2021	257	6.2	\N	can	440	\N	8
+996	West Coast IPA	2020	257	6.2	\N	can	355	\N	7
+997	When You're Strange	2021	273	7.5	\N	can	375	\N	7
+998	Where Strides the Behemoth	2020	378	10.5	\N	can	375	\N	8
+999	Whisky Aged Cider	2014	379	9.8	\N	bottle	750	aged in Lark whisky barrels	10
+1000	Whisky Barrel Aged Stout	2018	249	8.5	\N	bottle	750	aged in Limeburners whisky barrels	8
+1001	White Mischief	2020	256	2.9	\N	can	330	\N	5
+1002	Wild Thing Vanilla	2017	243	10	\N	bottle	330	\N	8
+1003	Windjammer	2018	240	6	\N	can	375	\N	7
+1004	Willy Tonka	2020	243	13	\N	can	440	\N	8
+1005	Witch Doctor	2019	248	6.9	\N	can	375	\N	7
+1006	Wolf Among Weeds	2021	240	8	\N	can	350	\N	7
+1007	Wooden Leg	2021	296	9.1	\N	can	375	\N	7
+1008	XPA	2019	259	5.1	24	can	375	\N	4
+1009	XS	2016	272	9.5	74	bottle	750	\N	8
+1010	XXXX Bitter	2021	280	4.4	\N	bottle	375	\N	1
+1011	Yakimanian	2020	240	6.1	\N	can	440	\N	7
+1012	Yakima Valley	2020	252	8	\N	can	440	\N	10
+1013	Yankee Brown IPA	2021	380	8.9	\N	bottle	330	barrel-aged	8
+1014	You Can't Handle the Juice	2020	252	8.5	\N	can	475	\N	9
+1015	You had me at Citra	2021	238	8.9	\N	can	375	triple dry-hopped	7
+1016	Yuzu Lager	2020	236	5.5	\N	can	350	Yuzu	8
+1017	Zamboni Haze	2017	272	8	70	can	475	\N	10
+1018	Zen Garden	2019	248	6.4	\N	can	475	double dry-hopped	6
+\.
+
+
+--
+-- Data for Name: brewed_by; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.brewed_by (beer, brewery) FROM stdin;
+346	156
+347	108
+348	121
+349	207
+350	60
+351	117
+352	194
+353	63
+354	147
+355	179
+356	179
+357	90
+358	40
+359	40
+360	109
+361	109
+362	17
+363	16
+364	91
+364	139
+365	185
+366	45
+367	181
+368	199
+369	160
+370	80
+371	93
+372	63
+373	151
+374	8
+375	112
+376	106
+377	91
+377	215
+378	203
+379	89
+380	170
+381	193
+382	41
+383	43
+384	205
+385	147
+386	45
+387	117
+388	31
+389	106
+390	181
+391	138
+392	56
+393	147
+394	91
+395	194
+396	147
+397	30
+398	31
+398	136
+399	74
+400	147
+401	119
+402	194
+403	16
+404	31
+405	100
+406	208
+407	115
+408	135
+409	16
+410	40
+411	63
+412	36
+413	69
+414	143
+415	42
+416	91
+417	16
+418	218
+419	74
+420	74
+421	179
+422	39
+423	164
+424	63
+425	95
+426	39
+427	131
+428	86
+429	124
+430	80
+430	184
+431	75
+432	145
+433	59
+434	57
+435	91
+436	104
+437	194
+438	112
+439	110
+440	36
+441	52
+442	61
+443	121
+444	52
+445	175
+446	221
+447	187
+448	179
+449	110
+450	186
+451	129
+452	213
+453	40
+454	7
+455	31
+456	186
+457	186
+458	186
+459	224
+460	179
+461	147
+462	164
+463	8
+463	139
+464	146
+465	163
+465	215
+466	31
+467	57
+468	179
+469	196
+470	232
+471	39
+472	194
+473	226
+474	164
+475	91
+476	74
+477	23
+478	179
+478	168
+479	106
+480	179
+481	196
+482	89
+483	180
+484	207
+485	147
+486	118
+487	118
+488	118
+489	119
+490	100
+491	218
+492	31
+493	31
+494	31
+495	16
+496	116
+497	5
+498	139
+499	29
+500	224
+501	147
+502	231
+503	180
+504	91
+505	53
+506	228
+507	91
+508	7
+509	147
+510	164
+511	106
+512	153
+513	38
+514	143
+514	210
+515	140
+516	106
+517	91
+517	21
+518	220
+519	56
+520	204
+521	65
+522	39
+523	206
+524	31
+525	91
+525	139
+526	7
+527	16
+528	219
+529	147
+530	216
+531	139
+532	139
+533	22
+534	40
+535	143
+536	44
+537	33
+538	147
+539	142
+539	91
+540	8
+540	125
+541	5
+542	79
+543	79
+544	164
+545	101
+546	91
+547	143
+548	115
+549	115
+550	115
+551	115
+552	82
+553	194
+554	194
+555	221
+556	42
+557	33
+558	50
+559	169
+560	25
+561	31
+562	202
+563	194
+564	227
+565	78
+566	106
+567	226
+568	91
+569	89
+570	198
+571	104
+572	63
+573	27
+574	13
+575	205
+576	26
+577	159
+578	57
+579	223
+580	91
+580	215
+581	147
+582	88
+583	219
+584	56
+585	207
+586	91
+587	59
+588	200
+589	77
+590	173
+591	185
+592	193
+593	117
+594	143
+595	201
+596	201
+597	122
+598	111
+599	147
+600	57
+601	18
+602	186
+603	21
+604	39
+605	106
+606	114
+607	156
+608	164
+609	137
+610	39
+611	40
+612	181
+613	194
+614	39
+615	21
+616	167
+617	66
+618	29
+618	120
+619	4
+620	19
+621	147
+622	113
+623	74
+624	183
+625	207
+626	98
+627	89
+628	24
+629	37
+630	228
+631	77
+631	85
+632	181
+633	194
+634	147
+635	64
+636	31
+637	31
+638	22
+639	12
+640	124
+641	13
+642	13
+643	179
+644	177
+645	119
+646	147
+647	127
+648	115
+649	74
+650	148
+651	115
+652	106
+653	79
+654	39
+655	177
+656	59
+657	39
+658	8
+659	69
+660	234
+661	115
+662	115
+663	177
+664	179
+665	171
+666	77
+667	87
+668	16
+669	8
+670	22
+671	143
+672	143
+673	143
+674	143
+675	33
+676	89
+677	102
+678	164
+679	179
+680	211
+681	176
+682	7
+683	107
+684	21
+685	147
+686	56
+687	230
+688	163
+689	128
+690	2
+691	164
+692	164
+693	83
+694	147
+695	16
+696	102
+697	143
+698	57
+699	154
+700	204
+701	8
+702	65
+703	7
+704	91
+705	177
+706	42
+707	233
+707	143
+708	106
+709	155
+710	217
+711	16
+712	59
+713	147
+714	123
+715	34
+716	103
+717	75
+718	36
+719	191
+720	117
+721	164
+722	20
+723	43
+724	179
+725	174
+726	84
+727	164
+728	81
+729	16
+730	76
+731	72
+732	23
+733	214
+734	66
+735	36
+736	147
+737	70
+738	39
+739	175
+740	218
+741	16
+742	172
+743	202
+744	147
+745	150
+746	202
+747	35
+747	71
+748	37
+749	147
+750	194
+751	6
+752	3
+753	42
+754	42
+755	203
+756	39
+757	164
+758	207
+759	42
+760	91
+760	166
+761	163
+762	194
+763	140
+764	56
+765	147
+766	189
+767	33
+768	38
+769	191
+770	197
+771	97
+772	158
+773	194
+774	89
+775	38
+776	43
+777	143
+778	134
+779	194
+780	105
+781	161
+782	157
+783	221
+784	39
+785	179
+786	164
+787	164
+788	14
+789	139
+790	165
+791	176
+792	2
+793	9
+794	147
+795	177
+796	194
+797	40
+798	91
+799	130
+800	212
+801	94
+802	147
+803	63
+804	203
+805	117
+806	70
+807	91
+808	16
+809	8
+809	162
+810	106
+811	15
+812	77
+813	77
+814	211
+815	139
+816	131
+817	59
+818	206
+819	77
+820	39
+821	211
+822	175
+823	16
+824	40
+825	104
+826	206
+827	164
+828	181
+829	7
+830	147
+831	26
+832	132
+833	47
+834	57
+835	38
+836	16
+837	46
+838	31
+839	54
+840	96
+841	178
+842	228
+843	106
+844	167
+845	56
+846	202
+847	181
+848	224
+849	56
+850	131
+851	43
+852	185
+853	7
+854	70
+855	207
+856	67
+857	39
+858	224
+859	68
+860	7
+861	20
+862	80
+863	72
+864	72
+865	2
+866	115
+867	73
+868	192
+869	48
+870	99
+871	19
+872	7
+873	164
+874	92
+875	208
+876	39
+877	198
+878	153
+879	40
+880	39
+880	147
+881	164
+882	91
+883	233
+884	153
+885	207
+886	194
+887	195
+888	155
+889	114
+890	225
+891	121
+892	77
+893	26
+894	39
+895	202
+896	31
+897	227
+898	147
+899	18
+900	147
+901	197
+902	175
+903	164
+904	28
+905	43
+906	190
+907	115
+908	115
+909	91
+909	215
+910	212
+911	10
+912	160
+913	115
+914	54
+915	63
+916	176
+917	29
+918	164
+919	212
+920	40
+921	189
+922	91
+923	7
+924	179
+924	168
+925	62
+926	134
+927	67
+928	18
+929	164
+930	22
+931	22
+932	117
+933	58
+934	2
+935	143
+936	7
+937	143
+938	42
+939	164
+940	24
+941	117
+942	143
+943	179
+944	169
+945	126
+946	116
+947	133
+948	162
+949	207
+950	33
+951	143
+952	213
+953	147
+954	164
+955	147
+956	209
+957	194
+958	212
+959	6
+960	69
+961	214
+962	182
+963	182
+964	188
+965	65
+966	17
+967	138
+968	22
+969	89
+970	63
+971	164
+972	207
+973	106
+974	84
+975	32
+976	207
+977	7
+977	154
+978	38
+979	52
+980	19
+981	63
+982	33
+983	29
+984	193
+985	152
+986	147
+987	131
+988	202
+989	7
+990	155
+990	186
+991	78
+992	77
+993	164
+994	115
+995	39
+996	149
+997	25
+998	119
+999	229
+1000	175
+1001	91
+1002	151
+1003	99
+1004	141
+1005	158
+1006	94
+1007	7
+1008	69
+1009	186
+1010	51
+1011	164
+1012	91
+1012	215
+1013	202
+1014	110
+1015	16
+1016	113
+1017	144
+1018	57
+\.
+
+
+--
+-- Data for Name: breweries; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.breweries (id, name, founded, website, located_in) FROM stdin;
+2	3 Ravens Brewing Co	2003	3ravens.com.au	2
+3	4 Pines Brewing Company	2008	4pinesbeer.com.au	3
+4	8 Wired Brewing	2009	8wired.co.nz	4
+5	Adroit Theory Brewing Company	2014	adroit-theory.com	5
+6	Aegir Bryggeri	2004	aegirbrewery.com	6
+7	Akasha Brewing Company	2015	akashabrewing.com.au	7
+8	AleSmith Brewing Co	1995	alesmith.com	8
+9	Algorithm Brewing	2020	tribebreweries.com	9
+10	Almanac Beer Company	2011	almanacbeer.com	10
+11	Alpine Beer Company	2002	alpinebeerco.com	11
+12	Amager Bryghus	2007	amagerbryghus.dk	12
+13	Anderson Valley Brewing Company	2000	avbc.com	13
+14	Brasserie Atrium	2018	brasserieatrium.be	14
+15	Austmann Bryggeri	2013	austmann.no	15
+16	Bacchus Brewing Company	2011	bacchusbrewing.com.au	16
+17	Badlands Brewery	2010	badlandsbrewery.com.au	17
+18	Bad Shepherd Brewing Co	2016	badshepherd.com.au	18
+19	Ballast Point Brewing Co	1996	ballastpoint.com	8
+20	Ballistic Beer Company	2017	ballisticbeer.com	19
+21	Balter Brewing Co	2016	balter.com.au	20
+22	Batch Brewing Co	2013	batchbrewingco.com.au	9
+23	Barrier Brewing Co	2012	barrierbrewing.com	21
+24	Baylands Brewery	2013	baylands.beer	22
+25	Bay Rd Brewing	2019	bayrdbrewing.com.au	23
+26	Bear Republic Brewing	1995	bearrepublic.com	24
+27	Beatnik Beer	2019	beatnikbeer.com	25
+28	Beer Farm	2016	beerfarm.com.au	26
+29	Belching Beaver Brewery	2012	belchingbeaver.com	27
+30	Bench Brewing Coompany	2016	benchbrewing.com	28
+31	Bentspoke Brewing Co	2014	bentspokebrewing.com.au	29
+32	Big Drop Brewing Co	2016	bigdropbrew.com	30
+33	Big Shed Brewing	2013	bigshed.beer	31
+34	Billson's Brewery	1865	billsons.com.au	32
+35	Birra del Borgo	2005	birradelborgo.it	33
+36	Black Hops	2014	blackhops.com.au	34
+37	Blasta Brewing Co	2017	blastabrewing.com	35
+38	Boatrocker Brewers and Distillers	2009	boatrocker.com.au	36
+39	Bracket Brewing	2020	bracketbrewing.com	37
+40	Brewdog	2007	brewdog.com	38
+41	Brick Lane Brewing	2017	bricklanebrewing.com	39
+42	Bridge Road Brewers	2005	bridgeroadbrewers.com.au	32
+43	Bright Brewery	2005	brightbrewery.com.au	40
+44	Brothers Beer	2016	brothersbeer.co.nz	41
+45	The Bruery	2008	thebruery.com	42
+46	Bulli Brewing Co	2021	bullibrewing.com.au	43
+47	Buxton Brewery Co	2009	buxtonbrewery.co.uk	44
+48	Caledonian Brewery	1869	caledonianbeer.com	45
+49	Capital Brewing Co	2016	capitalbrewing.co	46
+50	Carbon Brews	2018	carbonbrews.com	47
+51	Castlemaine Perkins Brewery	1878	xxxx.com.au	48
+52	Carlton and United Breweries	1854	cub.com.au	49
+53	Cellarmaker Brewing Co	2010	cellarmakerbrewing.com	50
+54	Central City Brewers	2015	centralcitybrewing.com	51
+55	Abbaye de Scourmont - Chimay	1862	chimay.com	52
+56	Chur (Behemoth) Brewing	2015	behemothbrewing.co.nz	53
+57	Clown Shoes Beer	2009	clownshoesbeer.com	54
+58	CoConspirators Brewing Co	2017	coconspirators.com.au	49
+59	Colonial Brewing Company	2004	colonialbrewingco.com.au	55
+60	Coopers Brewery	1852	coopers.com.au	56
+61	Grupo Modelo - Corona	1922	gmodelo.mex	57
+62	Counter Culture Brewing	2019	counterculturebrewery.com	58
+63	Dainton Brewing	2013	dainton.beer	59
+64	Darkes Cider	2015	darkescider.com.au	60
+65	Deep Creek Brewing	2012	dcbrewing.co.nz	61
+66	Brouwerij de Molen	2004	brouwerijdemolen.nl	62
+67	Deschutes Brewers	1988	deschutesbrewery.com	63
+68	De Struise Brouwers	2004	struise.com	64
+69	Detour Beer Co	2016	detour.beer	65
+70	Brasserie Dieu du Ciel!	2000	dieuduciel.com	66
+71	Dogfish Head Brewery	2000	dogfish.com	67
+72	Brasserie Dupont	1920	brasserie-dupont.com	68
+73	Brauerei Schloss Eggenberg	1971	www.schloss-eggenberg.at	69
+74	Ekim Brewing Co	2016	ekimbrewing.com.au	70
+75	El Segundo Brewing Company	2015	elsegundobrewing.com	71
+76	Electric Bear Brewing Co	2015	electricbearbrewing.com	72
+77	Epic Brewing Company	2006	epicbeer.com	73
+78	Equilibrium Brewery	2014	eqbrew.com	74
+79	Evil Twin Brewing	2010	eviltwin.nyc	75
+80	Exit Brewing	2014	exitbrewing.com	76
+81	Fair Stae Brewing Cooperative	2014	fairstate.coop	77
+82	Feral Brewing	2003	feralbrewing.com.au	78
+83	Figueroa Mountain Brewing Co	2010	figmtnbrew.com	79
+84	Firestone Walker Brewing Company	1996	firestonebeer.com	80
+85	Fork & Brewer	2015	forkandbrewer.co.nz	81
+86	Founders Brewing Company	1997	foundersbrewing.com	82
+87	Fourpure Brewing Co	2013	fourpure.com	83
+88	Frau Gruber	2016	fraugruber-craftbrewing.com	84
+89	Frenchies Bistro and Brewery	2017	frenchiesbistroandbrewery.com.au	85
+90	Future Mountain Brewing and Blending	2019	futuremountain.com.au	86
+91	Garage Project	2011	garageproject.co.nz	81
+92	Gigantic Brewing Company	2012	giganticbrewing.com	87
+93	Gipsy Hill Brewing	2013	gipsyhillbrew.com	88
+94	Golden Road Brewing	2011	www.goldenroad.la	89
+95	Goose Island Beer Company	2000	gooseisland.com	90
+96	Grand Ridge Brewery	1997	grand-ridge.com.au	91
+97	Grassy Knoll Brewing	2019	grassyknollbrewing.com.au	92
+98	Great Leap Brewing	2011	www.greatleapbrewing.com	93
+99	Green Beacon Brewing Co	2012	greenbeacon.com.au	94
+100	Grifter Brewing Co	2012	thegrifter.com.au	9
+101	The Grizzly Paw Brewing Company	2003	thegrizzlypaw.com	95
+102	HaandBryggeriet	2006	gistrupbryghus.dk	96
+103	Hair of the Dog Brewing Company	2000	hairofthedog.com	87
+104	Hargreaves Hill Brewing Co	2004	hargreaveshill.com.au	97
+105	Harviestoun Brewery	1983	harviestoun.com	98
+106	Hawkers Beer	2015	hawkers.beer	86
+107	Heart of Darkness	2017	heartofdarknessbrewery.com	99
+108	Heineken Brewing	1874	heineken.com	100
+109	Brauerei Heller	1930	schlenkerla.de	101
+110	Heretic Brewing	2011	hereticbrewing.com	102
+111	Heroes Beer Co	2017	heroesbeerco.com	103
+112	High Water Brewing Inc	2011	highwaterbrewing.com	104
+113	Kiuchi Brewery (Hitachino)	1823	hitachino.cc	105
+114	Holgate Brewhouse	1999	holgatebrewhouse.com	106
+115	Hope Brewery	2014	hopeestate.com.au	107
+116	Humble Sea Brewing	2016	humblesea.com	108
+117	Hop Nation Brewing Co	2014	hopnation.com.au	109
+118	Brouwerij Huyghe	1906	brouwerijhuyghe.be	110
+119	Kaiju! Beer	2013	kaijubeer.com.au	39
+120	Karl Strauss Brewing Company	2000	karlstrauss.com	8
+121	Brouwerij Kees!	2015	brouwerijkees.nl	111
+122	Kereru Brewing Co	2015	kererubrewing.co.nz	112
+123	Kizakura Sake Brewing Co. Ltd.	2004	kizakura.co.jp	113
+124	Knee Deep Brewing Co	2010	kneedeepbrewing.com	114
+125	Lakewood Brewing Company	2012	lakewoodbrewing.com	115
+126	Last Rites Brewing Co	2016	lastritesbrewing.com.au	116
+127	Lervig Aktiebryggeri	2003	lervig.no	117
+128	Lezajsk Brewery	1525	lezajsk.com.pl	118
+129	Liberty Brewing Company	2016	libertybrewing.co.nz	119
+130	LIC Beer Project	2015	licbeerproject.com	120
+131	Little Bang Brewing Co	2015	littlebang.com.au	121
+132	Little Creatures Brewing (Lion/Kirin)	2001	littlecreatures.com.au	122
+133	Local Brewing Co	2011	localbrewingco.com	50
+134	Lone Pine Brewing	2016	lonepinebrewery.com	123
+135	Matso's Broome Brewery	2001	matsos.com.au	124
+136	Malt Shovel Brewers	2000	www.malt-shovel.com.au	125
+137	Malt Wolf Pty Ltd	2020	maltwolf.com.au	126
+138	Mismatch Brewing Company	2013	mismatchbrewing.com.au	127
+139	Modern Times Beer	2013	moderntimesbeer.com	128
+140	Modus Operandi Brewing Company	2014	mobrewing.com.au	129
+141	Moersleutel Beer Engineers	2016	www.brouwerijdemoersleutel.nl	130
+142	Monkish Brewing Company	2012	monkishbrewing.com	131
+143	Moon Dog Craft Brewery	2010	moondogbrewing.com.au	132
+144	Moonraker Brewing	2016	moonrakerbrewing.com	114
+145	Mornington Peninsula Brewery	2010	mpbrew.com.au	133
+146	Mother Earth Brew Company	2010	motherearthbrewco.com	134
+147	Mountain Culture Beer Co	2019	mountainculture.com.au	135
+148	Mountain Goat Beer	1997	goatbeer.com.au	136
+149	Mr.Banks Brewing Co	2016	mrbanksbrewing.com.au	137
+150	Mudgee Brewing Co	2007	mudgeebrewing.com.au	138
+151	Murrays Brewing Co	2006	murraysbrewingco.com	139
+152	New Belgium Brewing Company	1995	newbelgium.com	140
+153	New England Brewing Co	2013	newenglandbrewing.com.au	141
+154	Newstead Brewing Company	2013	newsteadbrewing.com.au	48
+155	N.O.M.A.D Brewing	2012	nomadbrewingco.com.au	142
+156	Nogne 0 (Hansa Borg)	2003	www.nogne-o.com	143
+157	Northcoast Brewing Co	1988	northcoastbrewing.com	144
+158	Ocean Reach Brewing	2019	oceanreach.beer	145
+159	Odin Brewing Co	2009	odinbrewing.com	146
+160	Offshoot Beer	2015	www.thebruery.com/pages/offshoot-home	42
+161	Old Wives Ales	2016	oldwivesales.com	147
+162	Brewery Ommegang	1996	ommegang.com	148
+163	Omnipollo	2011	omnipollo.com	149
+164	One Drop Brewing Co.	2019	onedropbrewingco.com.au	150
+165	Brasserie d'Orval	1628	orval.be	151
+166	Other Half Brewing	2014	otherhalfbrewing.com	152
+167	Otherside Brewing Co	2017	othersidebrewing.com.au	153
+168	Outer Range Brewing Company	2016	outerrange.com	154
+169	Parallel49 Brewing Company	2012	parallel49brewing.com	155
+170	Parish Brewing Co	2010	parishbeer.com	156
+171	Pasteur Street Brewing Co	2014	pasteurstreet.com	157
+172	Pelican Brewing	1996	pelicanbrewing.com	158
+173	Birra Peroni Industriale	2000	peroni.it	159
+174	Phantom Beer	2018	instagram.com/phantombeer	155
+175	Pirate Life Brewing	2014	piratelife.com.au	160
+176	Pizza Port Brewing Company	1996	pizzaport.com	161
+177	Prancing Pony Brewery	2012	prancingponybrewery.com.au	162
+178	Quakers Hat Brewing	2017	quakershatbrewing.com.au	163
+179	Deeds Brewing	2012	deedsbrewing.com.au	164
+180	Range Brewing	2018	rangebrewing.com	165
+181	Revision Brewing Company	2015	revisionbrewing.com	166
+182	Brasserie de Rochefort	1899	trappistes-rochefort.com	167
+183	Rocks Brewing Co	2008	rocksbrewing.com	37
+184	Rocky Ridge Brewing	2016	rockyridgebrewing.com.au	168
+185	Rodenbach Brewery	1821	rodenbach.be	169
+186	Rogue Ales and Spirits	1998	rogue.com	170
+187	Sail and Anchor Brewing Co	1982	sailandanchor.com.au	171
+188	Sailors Grave Brewing	2015	sailorsgravebrewing.com	172
+189	Samuel Smiths Brewery	1758	samuelsmithsbrewery.co.uk	173
+190	Sea Legs Brewing Co	2019	sealegsbrewing.com.au	174
+191	Sauce Brewing Co	2017	sauce.beer	9
+192	Schorschbrau	2004	schorschbraeu.de	175
+193	Shark Island Brewing Company	2015	sharkislandbrewing.com.au	176
+194	Sierra Nevada Brewing Company	1980	sierranevada.com	177
+195	Singlecut Beersmiths	2012	singlecut.com	120
+196	Sixpoint Brewery	2004	sixpoint.com	152
+197	Six String Brewing Company	2013	sixstringbrewing.com.au	178
+198	Slow Lane Brewing	2020	slowlanebrewing.com.au	179
+199	Smoge City Brewing Co	2013	smogcitybrewing.com	131
+200	Societe Brewing Company	2012	societe.com	180
+201	Brouwerij Van Steenberge	1784	vansteenberge.com/en	181
+202	Stockade Brew Co	2010	stockadebrewco.com.au	9
+203	Stone Brewing	1996	stonebrewing.com	182
+204	Sunday Road Brewing Co	2019	sundayroadbrewing.com.au	183
+205	Surly Brewing Co.	2006	surlybrewing.com	77
+206	Sydney Brewery	2005	sydneybrewery.com	184
+207	Tallboy & Moose Make Beer Pty Ltd	2017	tallboyand moose.com	132
+208	Thunder Road Brewing Co	2011	thunderroadbrewing.com	185
+209	Tooheys Brothers	1875	\N	186
+210	To Ol	2010	toolbeer.dk	187
+211	Toppling Goliath Brewing Co.	2010	tgbrews.com	188
+212	Two Birds Brewing	2013	twobirdsbrewing.com.au	189
+213	Sparkke Change Beverage Company	2017	sparkke.com	190
+214	Spencer Brewery	2013	spencerbrewery.com	191
+215	Trillium Brewing Company	2013	trilliumbrewing.com	54
+216	Uitlje Brewing Compant	2012	uiltjebrewing.com	192
+217	Urban Alley Brewery	2018	urbanalley.com.au	193
+218	Urbanaut Brewing Co	2015	urbanautbrewing.co.nz	194
+219	Van Dieman Brewing	2009	vandiemanbrewing.com.au	195
+220	Brouwerij Verhaeghe	1885	brouwerijverhaeghe.be	196
+221	Wayward Brewing Co	2013	wayward.com.au	125
+222	Bayerische Staatsbrauerei Weihenstephan	1040	weihenstephaner.de	197
+223	West City Brewing	2016	westcitybrewing.com.au	109
+224	White Bay Beer Co	2020	whitebay.beer	198
+225	White Rabbit Brewing	2009	whiterabbitbeer.com.au	199
+226	Wicked Weed Brewing Co	2012	wickedweedbrewing.com	200
+227	Wildflower Brewing and Blending	2017	wildflowerbeer.com	9
+228	Willie the Boatman	2015	willietheboatman.com.au	201
+229	Willie Smiths Cidery	1888	williesmiths.com.au	202
+230	Wolf of the Willows Brewing Co	2014	wolfofthewillows.com.au	203
+231	Woolshed Brewery	2015	wilkadene.com.au/brewery	204
+232	Young Master Hong Kong	2013	youngmasterales.com	205
+233	Yulli's Brews	2014	yullisbrews.com.au	37
+234	Zytho Brewing	2019	pinnacledrinks.com.au	206
+\.
+
+
+--
+-- Data for Name: contains; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.contains (beer, ingredient) FROM stdin;
+351	124
+354	125
+354	126
+355	127
+356	126
+357	128
+357	129
+357	130
+357	131
+357	132
+357	133
+357	134
+357	135
+357	136
+357	137
+365	138
+366	139
+366	127
+366	140
+366	141
+376	142
+376	139
+386	143
+386	144
+387	143
+392	145
+392	124
+392	146
+392	147
+392	148
+394	149
+394	130
+395	150
+395	151
+396	152
+396	126
+396	127
+407	153
+410	154
+422	155
+422	145
+422	156
+424	139
+424	157
+426	158
+426	159
+426	160
+428	139
+428	161
+430	162
+430	163
+430	164
+430	165
+431	124
+431	153
+431	155
+436	166
+436	167
+439	127
+439	168
+439	139
+440	169
+446	170
+448	124
+448	171
+449	139
+449	172
+459	161
+463	173
+464	147
+464	174
+464	175
+464	176
+468	167
+468	176
+468	125
+469	177
+469	170
+469	178
+471	124
+471	145
+474	179
+475	180
+475	126
+475	181
+475	139
+475	161
+475	182
+475	183
+476	184
+478	185
+478	124
+478	186
+478	187
+478	188
+478	189
+479	190
+479	175
+479	177
+482	191
+482	147
+482	156
+482	192
+482	193
+482	194
+482	195
+483	124
+483	196
+483	147
+485	124
+485	145
+485	147
+485	197
+487	198
+495	199
+495	200
+495	201
+496	124
+496	202
+496	203
+498	147
+498	178
+498	196
+498	177
+500	172
+503	124
+503	177
+503	147
+504	145
+504	167
+504	177
+506	175
+506	147
+506	177
+506	152
+506	167
+506	178
+506	204
+506	195
+506	126
+507	151
+507	205
+510	141
+512	206
+513	207
+514	157
+519	145
+519	153
+519	151
+519	125
+521	124
+521	153
+522	208
+522	147
+522	124
+523	124
+523	145
+523	175
+523	125
+526	209
+527	209
+534	210
+540	146
+540	177
+540	124
+543	211
+543	157
+546	147
+546	145
+546	167
+554	212
+554	213
+554	214
+558	147
+558	171
+558	215
+558	216
+558	195
+558	126
+558	217
+558	134
+558	218
+560	145
+560	204
+560	219
+560	220
+560	221
+564	222
+565	197
+565	125
+567	223
+567	141
+567	211
+568	178
+571	224
+572	225
+573	226
+573	127
+580	125
+580	197
+584	210
+593	209
+597	211
+597	144
+598	227
+598	127
+602	172
+604	147
+604	151
+604	146
+606	175
+606	166
+606	147
+608	177
+608	151
+608	197
+608	126
+608	195
+610	124
+610	209
+610	197
+612	147
+612	170
+614	228
+614	177
+614	124
+615	178
+615	167
+615	177
+620	161
+620	141
+621	177
+622	229
+626	230
+626	231
+629	209
+638	185
+647	178
+647	232
+647	233
+648	210
+651	234
+654	235
+654	147
+657	236
+657	237
+657	124
+657	145
+661	165
+662	210
+665	238
+667	239
+670	175
+670	174
+670	124
+670	240
+671	241
+673	141
+674	157
+674	242
+675	243
+676	155
+676	149
+676	244
+676	245
+678	177
+678	124
+678	145
+678	127
+678	246
+679	237
+679	178
+679	124
+679	247
+679	193
+679	195
+679	187
+679	248
+682	147
+682	145
+682	196
+698	223
+698	141
+698	249
+712	250
+712	251
+720	151
+720	232
+720	147
+720	193
+720	252
+721	126
+721	214
+721	253
+721	157
+721	143
+721	211
+721	141
+721	127
+722	139
+722	254
+727	124
+727	156
+728	126
+728	195
+728	255
+729	255
+729	126
+729	127
+729	256
+729	257
+730	258
+730	259
+730	260
+730	261
+730	195
+730	139
+738	126
+738	161
+738	141
+741	147
+741	262
+752	263
+753	147
+753	177
+753	125
+753	174
+754	167
+754	175
+754	145
+754	196
+754	264
+754	265
+756	124
+756	175
+756	125
+765	124
+765	175
+765	126
+769	124
+769	125
+769	126
+769	127
+771	167
+771	124
+771	193
+771	126
+771	195
+784	178
+784	155
+784	124
+787	148
+787	266
+787	267
+789	147
+789	145
+789	237
+789	268
+789	269
+789	270
+789	271
+789	126
+789	272
+790	273
+790	274
+790	275
+790	276
+791	147
+791	232
+791	155
+791	277
+799	124
+799	147
+805	278
+807	151
+807	205
+811	279
+815	157
+815	162
+819	178
+819	147
+820	147
+820	145
+822	280
+825	125
+830	125
+832	139
+832	281
+832	223
+835	161
+837	282
+837	190
+837	283
+837	284
+837	285
+837	286
+837	287
+837	244
+837	195
+845	151
+845	288
+849	142
+849	165
+855	289
+859	290
+860	177
+861	177
+864	291
+866	168
+873	145
+873	175
+873	156
+873	153
+873	196
+873	155
+873	292
+875	127
+876	147
+876	146
+877	145
+877	216
+877	293
+877	294
+877	221
+878	124
+880	156
+880	124
+884	175
+884	174
+884	196
+885	141
+885	295
+886	296
+886	297
+888	298
+888	163
+893	299
+893	300
+894	236
+894	147
+895	210
+902	167
+902	175
+902	193
+902	217
+906	124
+906	177
+906	170
+906	301
+906	302
+906	141
+906	303
+911	304
+913	145
+913	124
+913	147
+913	305
+913	195
+913	126
+916	306
+916	153
+916	196
+917	163
+917	142
+917	164
+919	297
+919	307
+923	262
+924	125
+924	197
+924	193
+924	189
+924	126
+924	308
+930	157
+935	259
+935	309
+935	310
+935	311
+937	265
+937	147
+937	170
+937	178
+937	166
+937	193
+937	312
+937	313
+946	145
+946	174
+946	125
+947	124
+947	147
+947	145
+947	155
+949	295
+950	168
+950	139
+951	129
+951	314
+951	126
+951	261
+951	139
+951	245
+951	127
+951	140
+958	209
+969	174
+969	315
+969	191
+970	139
+972	127
+972	157
+973	165
+973	162
+980	161
+980	141
+983	316
+983	278
+987	139
+988	317
+988	318
+990	319
+992	129
+992	264
+992	124
+1001	320
+1002	141
+1004	321
+1004	322
+1015	124
+1016	298
+1017	145
+1017	124
+1017	193
+1017	221
+\.
+
+
+--
+-- Data for Name: ingredients; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.ingredients (id, itype, name) FROM stdin;
+124	hop	Citra
+125	hop	Galaxy
+126	grain	Oats
+127	adjunct	Lactose
+128	hop	Aramis
+129	hop	Magnum
+130	grain	Pilsner malt
+131	grain	Flaked rye
+132	grain	Dehusked roast malt
+133	adjunct	Juniper berries
+134	adjunct	Cardamom
+135	adjunct	Blakc pepper
+136	adjunct	Rosemary
+137	adjunct	Start anise
+138	adjunct	Sour cherry juice
+139	adjunct	Chocolate
+140	adjunct	Cacao
+141	adjunct	Vanilla
+142	adjunct	Orange
+143	adjunct	Banana
+144	adjunct	Walnut
+145	hop	Simcoe
+146	hop	Motueka
+147	hop	Mosaic
+148	hop	Mandarina bavaria
+149	hop	Saaz
+150	hop	Sorachi ace
+151	hop	Nelson sauvin
+152	hop	Cryopop
+153	hop	Cascade
+154	adjunct	Vietnamese coffee
+155	hop	Chinook
+156	hop	Riwaka
+157	adjunct	Coconut
+158	adjunct	Raspberry
+159	adjunct	Blackberry
+160	adjunct	Boysenberry
+161	adjunct	Coffee
+162	adjunct	Pineapple
+163	adjunct	Passionfruit
+164	adjunct	Guava
+165	adjunct	Mango
+166	hop	Azacca
+167	hop	Strata
+168	adjunct	Caramel
+169	adjunct	Rum-soaked fruit
+170	hop	Cashmere
+171	hop	Citra (cryo)
+172	adjunct	Hazelnut
+173	adjunct	Citrus zest
+174	hop	El dorado
+175	hop	Amarillo
+176	hop	Belma
+177	hop	Sabro
+178	hop	Idaho 7
+179	adjunct	Dark sour cherries
+180	grain	Canterbury
+181	grain	Roasted barley
+182	adjunct	Hazeknut
+183	adjunct	Oriange
+184	adjunct	Dark rum
+185	hop	Hpa-016
+186	grain	Golden promise
+187	grain	Rolled oats
+188	grain	Malted oats
+189	grain	Wheat malt
+190	hop	Ella
+191	hop	Hallertau blanc
+192	hop	Comet
+193	grain	Pale malt
+194	grain	Caramalt
+195	grain	Wheat
+196	hop	Centennial
+197	hop	Vic-secret
+198	adjunct	Cherries
+199	adjunct	Marshmallow
+200	adjunct	Biscuits
+201	adjunct	Smoked habanero chilli
+202	hop	Wakatu
+203	hop	Wai-iti
+204	grain	Pale
+205	hop	Rakau
+206	adjunct	Chai
+207	adjunct	Whisky
+208	hop	Trident
+209	hop	Eclipse
+210	adjunct	Grapefruit
+211	adjunct	Maple syrup
+212	adjunct	Rice
+213	adjunct	Almond
+214	adjunct	Peach
+215	hop	Mosaic (cryo)
+216	grain	Pilsner
+217	grain	Carapils
+218	adjunct	Orange peel
+219	grain	Vienna
+220	grain	Flaked wheat
+221	grain	Flaked oats
+222	grain	Stringy bark smoked malt
+223	adjunct	Cinnamon
+224	adjunct	Mango puree
+225	adjunct	Chocolate fudge
+226	adjunct	Cocoa
+227	adjunct	Hibiscus
+228	hop	Melba
+229	adjunct	Red rice
+230	adjunct	Chinese honey
+231	adjunct	Sichuan peppercorns
+232	hop	Loral
+233	hop	Loral (cryo)
+234	adjunct	Blueberry
+235	hop	Moutere
+236	hop	Sultana
+237	hop	Ekuanot
+238	adjunct	Jasmine
+239	adjunct	Citrus
+240	adjunct	Kolsch yeast
+241	adjunct	Truffles
+242	adjunct	Cherry
+243	adjunct	Juniper
+244	grain	Munich
+245	grain	Carafa
+246	adjunct	Cornflakes
+247	hop	Simcoe (cryo)
+248	adjunct	Dextrose
+249	adjunct	Chipotle chillies
+250	adjunct	Blood Orange
+251	adjunct	Saltbush
+252	grain	Wheat?
+253	adjunct	Strawberry
+254	adjunct	Chilli
+255	grain	Barley
+256	adjunct	Spices
+257	adjunct	Fruit extracts (raspberry)
+258	hop	Phoenix
+259	hop	Fuggles
+260	grain	Pale crystal
+261	grain	Amber
+262	hop	Talus
+263	hop	Nectaron
+264	hop	Columbus
+265	hop	Warrior
+266	hop	Saphir
+267	hop	#10416
+268	hop	Demali
+269	hop	Nugget
+270	hop	Eureka
+271	grain	Two row
+272	grain	White wheat
+273	hop	Hallertau
+274	hop	Styrian golding
+275	hop	Strisselspalt
+276	adjunct	Brettanomyces
+277	hop	Waimea
+278	adjunct	Peanut butter
+279	adjunct	Hand-picked Norwegian pine shoots
+280	adjunct	Pumpkin
+281	adjunct	Cayenne papper
+282	hop	Pride of ringwood
+283	hop	Enigma
+284	hop	Tomohawk
+285	grain	Aurora
+286	grain	Light crystal
+287	grain	Medium crystal
+288	adjunct	Hemp
+289	adjunct	Earl grey
+290	adjunct	Belgian yeast
+291	hop	Styrian wolf
+292	hop	Crystal
+293	grain	Dark munich
+294	grain	Chit
+295	adjunct	Apricot
+296	adjunct	Lemon
+297	adjunct	Coriander
+298	adjunct	Yuzu
+299	adjunct	Molasses
+300	adjunct	Licorice root
+301	adjunct	Raspberry puree
+302	adjunct	Strawberry puree
+303	adjunct	Coffee beans
+304	adjunct	Pear juice
+305	hop	Voyager
+306	hop	Galena
+307	adjunct	Lime zest
+308	grain	Flaked barley
+309	grain	Maris otter
+310	grain	Caramunich T2
+311	grain	Cara aroma
+312	grain	Torrified wheat
+313	grain	Vienna malt
+314	grain	Caramel steam
+315	hop	Calypso
+316	adjunct	Mexican chocolate
+317	adjunct	Wasabi
+318	adjunct	Ginger
+319	adjunct	Wattleseeds
+320	adjunct	White peaches
+321	adjunct	Tonka beans
+322	adjunct	Cacao nibs
+\.
+
+
+--
+-- Data for Name: locations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.locations (id, country, region, metro, town) FROM stdin;
+2	Australia	Victoria	Melbourne	Thornbury
+3	Australia	New South Wales	Sydney	Manly
+4	New Zealand	\N	Auckland	Warkworth
+5	United States	Virginia	\N	Purcellville
+6	Norway	\N	\N	Flam
+7	Australia	New South Wales	Sydney	Five Dock
+8	United States	California	San Diego	\N
+9	Australia	New South Wales	Sydney	Marrickville
+10	United States	California	\N	Alameda
+11	United States	California	\N	Alpine
+12	Denmark	\N	\N	Karstrup
+13	United States	California	\N	Boonville
+14	Belgium	\N	Luxembourg	Marche-en-Famenne
+15	Norway	Trondelag	\N	Trondheim
+16	Australia	Queensland	Brisbane	Capalaba
+17	Australia	New South Wales	\N	Orange
+18	Australia	Victoria	Melbourne	Cheltenham
+19	Australia	Queensland	Brisbane	Salisbury
+20	Australia	Queensland	Gold Coast	Currumbin
+21	USA	New York	New York	Oceanside
+22	New Zealand	Lower Hutt	Wellington	Petone
+23	Australia	New South Wales	Central Coast	Gosford
+24	United States	California	\N	Cloverdale
+25	Australia	Victoria	\N	Yarra Glen
+26	Australia	Western Australia	\N	Metricup
+27	United States	California	San Diego	Oceanside
+28	Canada	Ontario	\N	Beamsville
+29	Australia	ACT	Canberra	Braddon
+30	England	Suffolk	Ipswich	\N
+31	Australia	South Australia	Adelaide	Royal Park
+32	Australia	Victoria	\N	Beechworth
+33	Italy	Lazio	\N	Borgorose
+34	Australia	Queensland	Gold Coast	\N
+35	Australia	Western Australia	Perth	Burswood
+36	Australia	Victoria	Melbourne	Braeside
+37	Australia	New South Wales	Sydney	Alexandria
+38	Scotland	\N	\N	Ellon
+39	Australia	Victoria	Melbourne	Dandenong
+40	Australia	Victoria	\N	Bright
+41	New Zealand	\N	Auckland	Mt Eden
+42	United States	California	\N	Placentia
+43	Australia	New South Wales	Wollongong	Unanderra
+44	England	Derbyshire	\N	Buxton
+45	Scotland	Lothian	Ediburgh	\N
+46	Australia	ACT	Canberra	Fyshwick
+47	Hong Kong	\N	Hong Kong	Fo Tan
+48	Australia	Queensland	Brisbane	Milton
+49	Australia	Victoria	Melbourne	Abbotsford
+50	United States	California	San Francisco	\N
+51	Canada	British Columbia	\N	Surrey
+52	Belgium	Hainaut	\N	Chimay
+53	New Zealand	\N	Auckland	Mount Eden
+54	United States	Massachusetts	Boston	\N
+55	Australia	Victoria	Melbourne	Port Melbourne
+56	Australia	South Australia	Adelaide	Regency Park
+57	Mexico	\N	Mexico City	\N
+58	United States	Colorado	Denver	\N
+59	Australia	Victoria	Melbourne	Carrum Downs
+60	Australia	New South Wales	\N	Darkes Forest
+61	New Zealand	\N	Auckland	Browns Bay
+62	Netherlands	\N	\N	Bodegraven
+63	United States	Oregon	\N	Bend
+64	Netherlands	West Flanders	\N	Oostvletern
+65	Australia	Victoria	\N	Coldstream
+66	Canada	Quebec	\N	Saint-Jerome
+67	United States	Delaware	\N	Milton
+68	Belgium	Hainaut	\N	Tourpes-Leuze
+69	Austria	Vorchdorf	\N	Eggenberg
+70	Australia	New South Wales	Sydney	Mt Kurin-gai
+71	USA	California	\N	El Segundo
+72	England	\N	\N	Bath
+73	New Zealand	\N	Auckland	\N
+74	United States	New York	\N	Middletown
+75	United States	New York	New York	Ridgewood
+76	Australia	Victoria	Melbourne	Dandenong South
+77	United States	Minnesota	Minneapolis	\N
+78	Australia	Western Australia	Swan Valley	Baskerville
+79	United States	California	\N	Buellton
+80	United States	California	\N	Paso Robles
+81	New Zealand	\N	Wellington	\N
+82	United States	Michigan	\N	Grand Rapids
+83	England	\N	London	Bermondsey
+84	Germany	Bayern	\N	Augsburg
+85	Australia	New South Wales	Sydney	Rosebery
+86	Australia	Victoria	Melbourne	Reservoir
+87	United States	Oregon	Portland	\N
+88	England	\N	London	\N
+89	United States	California	Los Angeles	\N
+90	United States	Michigan	Chicago	\N
+91	Australia	Victoria	Gippsland	Mirboo North
+92	Australia	New South Wales	Sydney	Bondi
+93	China	\N	Beijing	Dongcheng
+94	Australia	Queensland	Brisbane	Teneriffe
+95	Canada	Alberta	\N	Canmore
+96	Denmark	Gjol	\N	Aarbybro
+97	Australia	Victoria	Melbourne	Lilydale
+98	Scotland	Stirlingshire	\N	Alva
+99	Vietnam	\N	Ho Chi Minh City	\N
+100	Netherlands	\N	\N	Zoeterwoude
+101	Germany	Bavaria	Bamberg	\N
+102	United States	California	\N	Fairfeld
+103	Hong Kong	\N	Hong Kong	\N
+104	United States	California	\N	Lodi
+105	Japan	Ibaraki Prefecture	Naka City	\N
+106	Australia	Victoria	\N	Woodend
+107	Australia	New South Wales	\N	Pokolbin
+108	United States	California	Santa Cruz	\N
+109	Australia	Victoria	Melbourne	Footscray
+110	Belgium	East Flanders	\N	Melle
+111	Netherlands	\N	\N	Middelburg
+112	New Zealand	\N	Upper Hutt	\N
+113	Japan	\N	Kyoto	Fushimi-ku
+114	United States	California	\N	Auburn
+115	United States	Texas	Dallas	Garland
+116	Australia	Tasmania	Hobart	Cambridge
+117	Norway	Rogaland	\N	Stavanger
+118	Poland	\N	\N	Lezajsk
+119	New Zealand	\N	Auckland	Helensville
+120	United States	New York	New York	Queens
+121	Australia	South Australia	Adelaide	Stepney
+122	Australia	Western Australia	Perth	Fremantle
+123	United States	Maine	Portland	\N
+124	Australia	Western Australia	\N	Broome
+125	Australia	New South Wales	Sydney	Camperdown
+126	Australia	New South Wales	Sydney	\N
+127	Australia	South Australia	\N	Hay Valley
+128	United States	California	San Diego	Point Loma
+129	Australia	New South Wales	Sydney	Mona Vale
+130	Netherlands	\N	\N	Alkmaar
+131	United States	California	Los Angeles	Torrance
+132	Australia	Victoria	Melbourne	Preston
+133	Australia	Victoria	\N	Mornington
+134	United States	California	\N	Vista
+135	Australia	New South Wales	Blue Mountains	Katoomba
+136	Australia	Victoria	Melbourne	Richmond
+137	Australia	Victoria	Melbourne	Seaford
+138	Australia	New South Wales	\N	Mudgee
+139	Australia	New South Wales	Central Coast	Bobs Farm
+140	United States	Colorado	\N	Fort Collins
+141	Australia	New South Wales	\N	Uralla
+142	Australia	New South Wales	Sydney	Brookvale
+143	Norway	\N	\N	Grimstad
+144	United States	California	Mendocino Coast	Fort Bragg
+145	Australia	Victoria	\N	Cowes
+146	United States	Washington	\N	Tukwila
+147	Australia	Victoria	\N	\N
+148	United States	New York	\N	Cooperstown
+149	Sweden	\N	Stockholm	\N
+150	Australia	New South Wales	Sydney	Mascot
+151	Belgium	\N	Gaume	\N
+152	United States	New York	New York	Brooklyn
+153	Australia	Western Australia	Perth	Myaree
+154	United States	Colorado	\N	Frisco
+155	Canada	British Columbia	Vancouver	\N
+156	United States	Louisiana	\N	Loussard
+157	Vietnam	\N	Saigon	\N
+158	United States	Oregon	\N	Tillamook
+159	Italy	Lazio	Roma	\N
+160	Australia	South Australia	Adelaide	Port Adelaide
+161	United States	California	San Diego	Carlsbad
+162	Australia	South Australia	Adelaide	Totness
+163	Australia	New South Wales	Sydney	Manly Vale
+164	Australia	Victoria	Melbourne	Glen Iris
+165	Australia	Queensland	Brisbane	Newstead
+166	United States	Nevada	\N	Sparks
+167	Belgium	Namur	\N	Rochefort
+168	Australia	Western Australia	\N	Busselton
+169	Belgium	\N	\N	Roeselare
+170	United States	Oregon	\N	Newport
+171	Australia	Western Australia	\N	Fremantle
+172	Australia	Victoria	Gippsland	Orbost
+173	England	North Yorkshire	\N	Tadcaster
+174	Australia	Queensland	Brisbane	Kangaroo Point
+175	Germany	Bavaria	\N	Gunzenhausen
+176	Australia	New South Wales	Sydney	Kirrawee
+177	United States	California	\N	Chico
+178	Australia	New South Wales	\N	Erina
+179	Australia	New South Wales	Sydney	Botany
+180	United States	California	San Diego	Kearny Mesa
+181	Belgium	East Flanders	\N	Ertvelde
+182	United States	California	San Diego	Escondido
+183	Australia	New South Wales	Sydney	Kirawee
+184	Australia	New South Wales	Sydney	Surry Hills
+185	Australia	Victoria	Melbourne	Brunswick
+186	Australia	New South Wales	Sydney	Lidcombe
+187	Denmark	\N	Copenhagen	\N
+188	United States	Iowa	\N	Decorah
+189	Australia	Victoria	Melbourne	Spotswood
+190	Australia	South Australia	\N	Middleton
+191	United States	Massachusetts	\N	Spencer
+192	Netherlands	North Holland	\N	Haarlem
+193	Australia	Victoria	Melbourne	Docklands
+194	New Zealand	\N	Auckland	Kingsland
+195	Australia	Tasmania	\N	Evandale
+196	Belgium	West Flanders	\N	Wichte
+197	Germany	Bavaria	\N	Freising
+198	Australia	New South Wales	Sydney	Rozelle
+199	Australia	Victoria	\N	Geelong
+200	United States	North Carolina	\N	Asheville
+201	Australia	New South Wales	Sydney	St. Peters
+202	Australia	Tasmania	Huon Valley	Grove
+203	Australia	Victoria	Melbourne	Mordialloc
+204	Australia	South Australia	\N	Murtho
+205	Hong Kong	\N	\N	Wong Chuk Hang
+206	Australia	New South Wales	\N	Goulburn
+\.
+
+
+--
+-- Data for Name: styles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.styles (id, name, min_abv, max_abv) FROM stdin;
+235	Barley Wine	9	14
+236	Lager	0	1
+237	Imperial Porter	9	13
+238	Hazy IPA	4	9
+239	Strong Ale	6	13
+240	IPA	4	9
+241	Imperial Red Rye IPA	9	11
+242	Oat Cream IPA	5	8
+243	Imperial Stout	7	18
+244	Oat Cream Hazy Triple IPA	10	12
+245	Dark Farmhouse Ale	4	6
+246	Baltic Porter	6	12
+247	Rauchbier	5	7
+248	NEIPA	5	9
+249	Stout	5	9
+250	Flanders Red Ale	5	7
+251	Amber Ale	4	5
+252	Hazy Double IPA	7	9
+253	Red IPA	5	8
+254	Red Biere de Garde	6	8
+255	Ale	4	7
+256	Sour	2	7
+257	West Coast IPA	6	9
+258	Pastry Stout	6	14
+259	Pale Ale	3	6
+260	Double NEIPA	7	9
+261	Russian Imperial Stout	10	14
+262	Hazy Pale Ale	4	6
+263	Pilsener	4	5
+264	Black IPA	6	14
+265	Session IPA	4	5
+266	Extra Belgian Ale	5	7
+267	Amber IPA	5	7
+268	Double Red Ale	9	11
+269	Purple Carrot Ale	6	8
+270	Dark IPA	7	13
+271	Dark Lager	4	5
+272	Imperial IPA	8	41
+273	Double Red IPA	7	10
+274	Imperial Fruited Sour	7	9
+275	Oatmeal Stout	6	9
+276	Brown Ale	4	6
+277	Rustic Brown	7	9
+278	Double IPA	7	12
+279	Milk Stout	5	8
+280	Pale Lager	4	5
+281	Non-alcoholic	0	1
+282	Hazy Triple IPA	10	12
+283	Porter	5	9
+284	Red Ale	5	7
+285	XPA	4	6
+286	Imperial Hazy IPA	8	10
+287	Sour Hazy IPA	6	8
+288	American IPA	5	7
+289	DIPA	8	10
+290	Imperial Sour	6	8
+291	Dark Ale	5	10
+292	Strong Dark Ale	8	10
+293	Strong Fruit Beer	7	9
+294	Strong Pale Ale	7	9
+295	Smoked Porter	5	7
+296	Triple IPA	9	12
+297	Imperial Thickshake IPA	9	11
+298	Imperial Dark Ale	8	10
+299	Dry Hazy IPA	5	7
+300	Sour Flemish Ale	6	8
+301	Double Oat Cream IPA	6	8
+302	India Brown Ale	6	8
+303	Cleansing Ale	2	4
+304	Saison	3	8
+305	Imperial Hefeweizen	6	8
+306	Black Imperial IPA	10	12
+307	Imperial Red IPA	6	13
+308	Quintuple IPA	17	19
+309	Imperial IRA	7	9
+310	Hopfenweisse	4	6
+311	Flemish Red Ale	4	6
+312	Wild Ale	4	6
+314	Kettle soured Double IPA	7	9
+315	Cryo IPA	6	8
+316	Amber Lager	4	6
+317	New World Lager	3	5
+318	Quadrupel	10	12
+320	Oat Cream NEIPA	6	8
+321	American Pale Ale	4	6
+322	Tropical Brut IPA	5	7
+324	Cider	3	5
+325	Gose	3	5
+326	Red Double IPA	7	9
+327	Imperial Rye Stout	17	19
+329	Milkshake IPA	6	11
+330	Tripel	8	10
+331	Wit Bier	4	6
+333	Dunkel Weissbier	6	8
+334	Marzen	5	7
+335	Imperial Smoothie Sour	6	8
+336	Old Ale	6	8
+337	Dubbel	7	9
+339	Imperial Pilsener	7	9
+340	Belgian Imperial Stout	10	12
+341	Belgian Ale	5	7
+342	Strong Stout	8	10
+344	Rye IPA	5	7
+345	Red Rye IPA	4	6
+346	Imperial Red Ale	7	9
+347	Rye Beer	4	6
+348	Doppelbock	13	15
+349	Eisbock	32	41
+351	Australian IPA	5	7
+352	American Stout	5	7
+353	Creamy IPA	5	7
+354	White IPA	4	6
+356	Sour Red IPA	4	6
+357	Wee Heavy	8	10
+358	NEPA	5	7
+359	Super Sour	8	10
+361	Imperial NEIPA	9	11
+362	Margarita	6	8
+364	Vermont IPA	7	9
+365	Quadrupel Ale	9	11
+366	Milshake IPA	6	8
+367	Extra IPA	6	8
+368	Belgian Golden Ale	5	7
+370	Golden Ale	5	7
+371	Brut IPA	5	7
+372	Kettle Sour	3	5
+373	American Brown Ale	4	6
+375	Ice Cream Cake IPA	5	7
+376	Imperial Milk Stout	11	13
+377	New World IPA	6	8
+378	Black Double IPA	9	11
+380	Brown IPA	8	10
+313	Triple NEIPA	9	11
+319	Wheat Ale	4	6
+323	Hoppy Pilsener	4	6
+328	Biere de Garde Noir	5	7
+332	Vanilla Ice Cream Ale	7	8
+338	Belgian Quadrupel	9	11
+343	Imperial Stout + Quadrupel blend	10	12
+350	Scotch Ale	5	7
+355	Sour Blonde Ale	5	7
+360	Sour Ale	5	7
+363	Imperial Pastry Stout	9	11
+369	London Porter	4	6
+374	Hazy Imperial IPA	7	9
+379	Cloudy Cider	9	11
+\.
+
+
+--
+-- Name: beers beers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.beers
+    ADD CONSTRAINT beers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: brewed_by brewed_by_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.brewed_by
+    ADD CONSTRAINT brewed_by_pkey PRIMARY KEY (beer, brewery);
+
+
+--
+-- Name: breweries breweries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breweries
+    ADD CONSTRAINT breweries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contains contains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contains
+    ADD CONSTRAINT contains_pkey PRIMARY KEY (beer, ingredient);
+
+
+--
+-- Name: ingredients ingredients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ingredients
+    ADD CONSTRAINT ingredients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: locations locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: styles styles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.styles
+    ADD CONSTRAINT styles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: beers beers_style_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.beers
+    ADD CONSTRAINT beers_style_fkey FOREIGN KEY (style) REFERENCES public.styles(id);
+
+
+--
+-- Name: brewed_by brewed_by_beer_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.brewed_by
+    ADD CONSTRAINT brewed_by_beer_fkey FOREIGN KEY (beer) REFERENCES public.beers(id);
+
+
+--
+-- Name: brewed_by brewed_by_brewery_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.brewed_by
+    ADD CONSTRAINT brewed_by_brewery_fkey FOREIGN KEY (brewery) REFERENCES public.breweries(id);
+
+
+--
+-- Name: breweries breweries_located_in_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breweries
+    ADD CONSTRAINT breweries_located_in_fkey FOREIGN KEY (located_in) REFERENCES public.locations(id);
+
+
+--
+-- Name: contains contains_beer_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contains
+    ADD CONSTRAINT contains_beer_fkey FOREIGN KEY (beer) REFERENCES public.beers(id);
+
+
+--
+-- Name: contains contains_ingredient_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contains
+    ADD CONSTRAINT contains_ingredient_fkey FOREIGN KEY (ingredient) REFERENCES public.ingredients(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+

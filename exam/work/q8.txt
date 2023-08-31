@@ -1,0 +1,20 @@
+# COMP3311 22T1 Final Exam Q8
+# Relational algebra expressions
+
+
+(A)
+
+
+
+
+(B)
+
+
+
+
+
+(C)
+
+
+
+
