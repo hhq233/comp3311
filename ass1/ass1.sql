@@ -1,0 +1,423 @@
+-- comp3311 22T1 Assignment 1
+
+-- Q1
+create or replace view stuandpro as 
+select student, count(distinct program) from program_enrolments group by student;
+
+create or replace view Q1(unswid, name)
+as select p.unswid, p.name from people p, stuandpro s
+where p.id = s.student and s.count > 4;
+--... SQL statements, possibly using other views/functions defined by you ...
+
+
+-- Q2
+create or replace view coandst as 
+select staff, count(course) from course_staff 
+where role = (select id from Staff_roles where name = 'Course Tutor') 
+group by staff;
+
+create or replace view Q2(unswid, name, course_cnt)
+as select p.unswid, p.name, n.count as course_cnt 
+from people p, coandst n 
+where n.count = (select max(count) from coandst) and n.staff = p.id;
+
+
+--... SQL statements, possibly using other views/functions defined by you ...
+
+
+
+-- Q3
+create or replace view lawcourse as 
+select c.id, c.subject 
+from courses c, subjects s 
+where s.offeredby = (select id from orgunits where name = 'School of Law') and c.subject = s.id;
+
+create or replace view Q3(unswid, name)
+as select distinct p.unswid, p.name 
+from people p, students s, lawcourse l, course_enrolments c
+where s.id = p.id and s.stype = 'intl' and l.id = c.course and c.mark >85 and s.id = c.student
+;
+--... SQL statements, possibly using other views/functions defined by you ...
+
+-- Q4
+create or replace view cou1 as 
+select c.id, c.term from courses c, subjects s 
+where s.code = 'COMP9020' and c.subject = s.id;
+create or replace view cou2 as 
+select c.id, c.term from courses c, subjects s 
+where code = 'COMP9331' and c.subject = s.id;
+
+create or replace view Q4(unswid, name)
+as select distinct p.unswid, p.name 
+from people p, students s, cou1 c1, cou2 c2, course_enrolments ce1, course_enrolments ce2
+where s.id = p.id and s.stype = 'local' and c1.id = ce1.course and c2.id = ce2.course 
+and c1.term = c2.term and s.id = ce1.student and s.id = ce2.student;
+--... SQL statements, possibly using other views/functions defined by you ...
+
+
+
+-- Q5a
+--courseid and termname
+create or replace view coandterm as 
+select c.id, t.name
+from courses c, terms t, subjects s 
+where c.subject=s.id and c.term = t.id and s.code='COMP3311' and t.starting >= '2009-01-01' 
+and t.ending <'2013-01-01';
+
+
+create or replace view total as
+select ce.course, count(ce.mark) 
+from course_enrolments ce, coandterm c 
+where course = c.id group by course;
+
+create or replace view failed as
+select ce.course, count(ce.mark) 
+from course_enrolments ce, coandterm c 
+where course = c.id and ce.mark < 50 group by course;
+
+create or replace view rate as
+select f.course, min(round(round(f.count,2)/t.count, 4)) as failrate
+from total t, failed f where f.course = t.course group by f.course;
+
+create or replace view Q5a(term, min_fail_rate)
+as 
+select t.name as term, r.failrate as min_fail_rate
+from coandterm t, rate r 
+where t.id = r.course and r.failrate = (select min(failrate) from rate);
+--... SQL statements, possibly using other views/functions defined by you ...
+
+
+-- Q5b
+create or replace view coandterm as 
+select c.id, t.name
+from courses c, terms t, subjects s 
+where c.subject=s.id and c.term = t.id and s.code='COMP3311' and t.starting >= '2016-01-01' 
+and t.ending <'2020-01-01';
+
+create or replace view total as
+select ce.course, count(ce.mark) 
+from course_enrolments ce, coandterm c 
+where course = c.id group by course;
+
+create or replace view failed as
+select ce.course, count(ce.mark) 
+from course_enrolments ce, coandterm c 
+where course = c.id and ce.mark < 50 group by course;
+
+create or replace view rate as
+select f.course, min(round(round(f.count,2)/t.count, 4)) as failrate
+from total t, failed f where f.course = t.course group by f.course;
+
+create or replace view Q5b(term, min_fail_rate)
+as 
+select t.name as term, r.failrate as min_fail_rate
+from coandterm t, rate r 
+where t.id = r.course and r.failrate = (select min(failrate) from rate);
+--... SQL statements, possibly using other views/functions defined by you ...
+
+
+-- Q6
+
+create or replace function 
+	Q6(id integer,code text) returns integer
+as $$
+select ce.mark
+from students stu, people p, subjects sub, courses c, course_enrolments ce
+where p.id = $1 and p.id = stu.id and sub.code = $2 and sub.id = c.subject
+    and ce.course = c.id and ce.student = stu.id;
+--... SQL statements, possibly using other views/functions defined by you ...
+$$ language sql;
+
+
+-- Q7
+create or replace function 
+	Q7(year integer, session text) returns table (code text)
+as $$
+select sub.code
+from terms t, subjects sub, courses c
+where year = $1 and session = $2 and sub.code like 'COMP%' and sub.career = 'PG'
+    and c.subject = sub.id and c.term = t.id;
+--... SQL statements, possibly using other views/functions defined by you ...
+$$ language sql;
+
+
+-- Q8
+create or replace function
+	Q8(zid integer) returns setof TermTranscriptRecord
+as $$
+declare
+    TTR TermTranscriptRecord;
+    tuple record;
+    curterm char(4) := '';
+    uocsum integer := 0;
+    uocpasssum integer := 0;
+    marksum integer := 0;
+    ovalmarksum integer := 0;
+    ovaluocsum integer := 0;
+    ovalp integer := 0;
+begin
+    for tuple in
+        select CAST (termName(t.id) AS char(4)) as term, ce.grade, ce.mark, 
+                sub.uoc from terms t, 
+        students s, courses c, course_enrolments ce, people p, subjects sub 
+        where p.unswid = zid and p.id = s.id and ce.student = s.id 
+        and ce.course = c.id and c.term = t.id and c.subject = sub.id
+    loop
+        if(tuple.term <> curterm) then
+            if(curterm <> '')then
+                TTR.term := curterm;
+                TTR.termwam := ROUND(ROUND(marksum, 1) / uocsum);                
+                TTR.termuocpassed := uocpasssum;
+                ovalmarksum := ovalmarksum + marksum;
+                ovalp := ovalp + TTR.termuocpassed;
+                if (TTR.termwam = 0) then
+                    TTR.termwam := null;
+                end if;
+                if (TTR.termuocpassed = 0) then 
+                    TTR.termuocpassed := null;
+                end if;
+                return next TTR;
+            end if; 
+            curterm := tuple.term;
+            marksum := 0;
+            uocpasssum := 0;    
+            uocsum := 0;    
+        end if;
+        uocsum := uocsum + tuple.uoc;
+        if (tuple.mark <> 0) then
+            marksum := marksum + tuple.uoc * tuple.mark;
+            ovaluocsum := ovaluocsum + tuple.uoc;
+        end if;
+        if (tuple.grade = 'SY' or tuple.grade = 'PT' or tuple.grade = 'PC' 
+            or tuple.grade = 'PS' or tuple.grade = 'CR' or tuple.grade = 'DN'
+            or tuple.grade = 'HD' or tuple.grade = 'A' or tuple.grade = 'B'
+            or tuple.grade = 'C' or tuple.grade = 'XE' or tuple.grade = 'T'
+            or tuple.grade = 'PE' or tuple.grade = 'RC' or tuple.grade = 'RS') then
+            uocpasssum := uocpasssum + tuple.uoc;
+        end if;
+        
+    end loop;
+    if(curterm <> '') then
+        TTR.term := curterm;
+        TTR.termwam := marksum / uocsum;
+        TTR.termuocpassed := uocpasssum;
+        ovalmarksum := ovalmarksum + marksum;
+        ovalp := ovalp + TTR.termuocpassed;
+        if (TTR.termwam = 0) then
+            TTR.termwam := null;
+        end if;
+        if (TTR.termuocpassed = 0) then 
+            TTR.termuocpassed := null;
+        end if;
+        return next TTR;
+        
+        TTR.term := 'OVAL';
+        TTR.termwam := null;
+        if(ovaluocsum <> 0) then
+            TTR.termwam := ROUND(Round(ovalmarksum, 1))/ovaluocsum;
+        end if;       
+        TTR.termuocpassed := ovalp;
+        return next TTR;
+    end if;
+end;
+$$ language plpgsql;
+
+
+-- Q9
+create or replace function
+    helper(gtype text, gid integer) returns setof AcObjRecord
+as $$
+declare
+    tuple1 record;
+    tuple2 record;
+    aor AcObjRecord;
+begin
+    if (gtype = 'subject') then
+        for tuple1 in select * from Subject_group_members where ao_group = gid
+        loop
+            for tuple2 in select code from subjects where id = tuple1.subject               
+            loop
+                aor.objtype := gtype;
+                aor.objcode := tuple2.code;
+                return next aor;
+            end loop;
+        end loop;
+    elsif (gtype = 'stream') then
+        for tuple1 in select * from Stream_group_members where ao_group = gid
+        loop
+            for tuple2 in select code from streams where id = tuple1.stream               
+            loop
+                aor.objtype := gtype;
+                aor.objcode := tuple2.code;
+                return next aor;
+            end loop;
+        end loop;
+    elsif (gtype = 'program') then
+        for tuple1 in select * from Program_group_members where ao_group = gid
+        loop
+            for tuple2 in select code from Programs where id = tuple1.program               
+            loop
+                aor.objtype := gtype;
+                aor.objcode := tuple2.code;
+                return next aor;
+            end loop;
+        end loop;
+    end if;
+end;
+$$language plpgsql;
+
+create or replace function 
+	Q9(gid integer) returns setof AcObjRecord
+as $$
+declare
+    tuple1 record;
+    tuple2 record;
+    tuple3 record;
+    aor AcObjRecord;
+    line text;
+    
+begin
+    for tuple1 in select * from Acad_object_groups where id = gid
+    loop
+        if (tuple1.gdefby = 'enumerated' and tuple1.negated = false) then
+            for tuple2 in select * from helper(tuple1.gtype, gid)
+            loop
+                aor := tuple2;
+                return next aor;
+            end loop; 
+            
+            for tuple3 in select * from Acad_object_groups where parent = gid
+            loop
+                for tuple2 in select * from helper(tuple3.gtype, tuple3.id)
+                loop
+                    aor := tuple2;
+                    return next aor;
+                end loop;
+            end loop;
+        elsif (tuple1.gdefby = 'pattern' and tuple1.negated = false) then
+            if (tuple1.definition like '%F=%' or tuple1.definition like 'Free'
+                or tuple1.definition like 'GEN') then
+                return;
+            else
+                for tuple2 in select str 
+                    from regexp_split_to_table(tuple1.definition, ',') as str
+                loop
+                    if (tuple2.str like '%[%]%') then 
+                    
+                        line := substring(tuple2.str from position('[' in tuple2.str)+1 
+                                             for position(']' in tuple2.str)-
+                                             position('[' in tuple2.str)-1
+                                         );
+                        
+                        for tuple3 in select str 
+                            from regexp_split_to_table(line, '\s*') as str
+                        loop
+                            aor.objtype := tuple1.gtype;
+                            aor.objcode := concat(
+                                substring(tuple2.str from 1 For position('[' in tuple2.str)-1), tuple3.str);
+                            return next aor;
+                        end loop;
+                        
+                    elsif (tuple2.str like '%(%|%)%') then
+                        for tuple3 in select str from regexp_split_to_table(tuple2.str, '|') as str
+                        loop
+                            aor.objtype := tuple1.gtype;
+                            aor.objcode := tuple3.str;
+                            if (aor.objcode like '%(%') then
+                                aor.objcode := ltrim(replace(aor.objcode, '(', ' '));
+                            end if;
+                            if (aor.objcode like '%)%') then
+                                aor.objcode := rtrim(replace(aor.objcode, ')', ' '));
+                            end if;
+                            return next aor;
+                        end loop;
+                    elsif (tuple2.str like '%{%}%') then
+                        for tuple3 in select str from regexp_split_to_table(tuple2.str, ';') as str
+                        loop
+                            aor.objtype := tuple1.gtype;
+                            aor.objcode := tuple3.str;
+                            if (aor.objcode like '%{%') then
+                                aor.objcode := ltrim(replace(aor.objcode, '{', ' '));
+                            end if;
+                            if (aor.objcode like '%}%') then
+                                aor.objcode := rtrim(replace(aor.objcode, '}', ' '));
+                            end if;
+                            return next aor;
+                        end loop;
+                        
+                    elsif (tuple2.str like '%###%') then
+                        tuple2.str := replace(tuple2.str, '#', '%');
+                        
+                        if (tuple1.gtype = 'subject') then
+                            for tuple3 in select code from subjects where code like tuple2.str
+                            loop
+                                aor.objtype := tuple1.gtype;
+                                aor.objcode := tuple3.code;
+                                return next aor; 
+                            end loop;
+                        end if;
+                        
+                        if (tuple1.gtype = 'stream') then
+                            for tuple3 in select code from streams where code like tuple2.str
+                            loop
+                                aor.objtype := tuple1.gtype;
+                                aor.objcode := tuple3.code;
+                                return next aor; 
+                            end loop;
+                        end if;
+                        
+                        if (tuple1.gtype = 'program') then
+                            for tuple3 in select code from programs where code like tuple2.str
+                            loop
+                                aor.objtype := tuple1.gtype;
+                                aor.objcode := tuple3.code;
+                                return next aor; 
+                            end loop;
+                        end if;
+                        
+                    else
+                        aor.objtype := tuple1.gtype;
+                        aor.objcode := tuple2.str;
+                        return next aor;
+                    end if;
+                end loop;
+            end if;
+        else 
+            return;
+        end if;
+    end loop;
+end;
+$$ language plpgsql;
+
+
+-- Q10
+create or replace function
+	Q10(code text) returns setof text
+as $$
+declare
+    tuple1 record;
+    tuple2 record;
+begin
+
+    create table subarray (
+        code text
+    );
+    for tuple1 in select * from rules 
+        join (select id as gid from Acad_object_groups where definition like '%'||code||'%')
+         as tab on rules.ao_group = tab.gid
+    loop
+        for tuple2 in select s.code from subject_prereqs sp, subjects s 
+                      where rule = tuple1.id and sp.subject = s.id
+        loop
+            if (tuple2.code like '%##%' or tuple2.code like '%{%}%' or 
+                tuple2.code like '%[%]%' or tuple2.code like '%(%)%') then
+                return;
+            end if;
+            insert into subarray (code) values(tuple2.code); 
+        end loop;
+    end loop;
+    return query (select distinct * from subarray);
+    drop table subarray;
+end;
+$$ language plpgsql;
+

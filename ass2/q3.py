@@ -1,0 +1,109 @@
+# COMP3311 22T1 Ass2 ... print info about cast and crew for Movie
+
+import sys
+import psycopg2
+
+# define any local helper functions here
+
+# set up some globals
+
+usage = "Usage: q3.py 'MovieTitlePattern' [Year]"
+db = None
+
+# process command-line args
+
+argc = len(sys.argv)
+
+# manipulate database
+'select name, played from Names n, acting_roles a where a.movie_id = 10057012 and n.id = a.name_id;'
+if argc == 1:
+    print(usage)
+    sys.exit()
+try:
+    db = psycopg2.connect("dbname=imdb")
+	# ... add your code here ...
+    cur = db.cursor()
+    result = []
+    if argc == 2:
+        qry = """
+        select id, rating, title, start_year 
+        from movies 
+        where title ~* %s 
+        order by rating desc, start_year asc, title;
+        """
+        pattern = '.*' + str(sys.argv[1]) + '.*'
+        cur.execute(qry, [pattern])
+        result = cur.fetchall()
+    elif argc == 3:
+        if not sys.argv[2].isnumeric():
+            print(usage)
+            sys.exit()            
+        qry = """
+        select id, rating, title, start_year 
+        from movies 
+        where title ~* %s and start_year = %s
+        order by rating desc, start_year asc, title;
+        """
+        pattern = '.*' + str(sys.argv[1]) + '.*'
+        year = sys.argv[2]
+        cur.execute(qry, [pattern, year])
+        result = cur.fetchall()
+    # more than 1 movie are matched
+    if len(result) > 1 :
+        print('Movies matching ' + '\'' + sys.argv[1] + '\'', end = '')
+        if argc == 2:
+            print()
+        elif argc == 3:
+            print(' ' + sys.argv[2])
+        print('===============')
+        for tup in result:
+            mvid, rating, title, start_year = tup
+            print(str(rating) + ' ' + title + ' ' + '(' + str(start_year) + ')')
+    # match no movie
+    elif len(result) == 0 :
+        print('No movie matching ' + '\'' + sys.argv[1] + '\'', end = '')
+        if argc == 2:
+            print()
+        elif argc == 3:
+            print(' ' + sys.argv[2])
+    # match exactly 1 movie
+    elif len(result) == 1 :
+        mv_id = 0
+        for tup in result:
+            mvid, rating, title, start_year = tup
+            mv_id = mvid
+            print(title + ' ' + '(' + str(start_year) + ')')
+            print('===============')
+            print('Starring')
+        # query to acting_roles table
+        qry = """
+        select name, played 
+        from Names n, acting_roles a, principals p 
+        where a.movie_id = %s and n.id = a.name_id 
+        and p.name_id = n.id and p.movie_id = a.movie_id 
+        order by p.ordering, played;
+        """
+        cur.execute(qry, [mv_id])
+        result = cur.fetchall()
+        for tup in result:
+            name, played = tup
+            print(' ' + name + ' as ' + played)
+        print('and with')
+        # query to crew_roles table
+        qry = """
+        select name, role 
+        from Names n, crew_roles c, principals p 
+        where c.movie_id = %s and n.id = c.name_id 
+        and p.name_id = n.id and p.movie_id = c.movie_id 
+        order by p.ordering, role;
+        """
+        cur.execute(qry, [mv_id])
+        result = cur.fetchall()
+        for tup in result:
+            name, role = tup
+            print(' ' + name + ': ' + role.capitalize())
+except psycopg2.Error as err:
+    print("DB error: ", err)
+finally:
+    if db:
+        db.close()

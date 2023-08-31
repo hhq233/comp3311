@@ -1,0 +1,59 @@
+# COMP3311 22T1 Ass2 ... print num_of_movies, name of top N people with most movie directed
+
+import sys
+import psycopg2
+
+# define any local helper functions here
+
+# set up some globals
+
+usage = "Usage: q1.py [N]"
+db = None
+
+# process command-line args
+
+argc = len(sys.argv)
+
+# manipulate database
+'''
+select n.name, count(cr.movie_id) 
+from names n, crew_roles cr 
+where n.id = cr.name_id and cr.role = 'director' 
+group by n.name 
+order by count desc, n.name;
+
+'''
+# counter i and default list number N is 10
+i = 0
+N = 10
+if argc == 2 :
+    
+    try:
+	    N = int(sys.argv[1])
+	# user give a non-integer value
+    except:
+        print(usage)
+        sys.exit()
+    # user give a integer < 1
+    if N < 1:
+        print(usage)
+        sys.exit()
+try:
+	db = psycopg2.connect("dbname=imdb")
+	# ... add your code here ...
+	cur = db.cursor()
+	qry = "select n.name, count(cr.movie_id) from names n, crew_roles cr where n.id = cr.name_id and cr.role = 'director' group by n.name order by count desc, n.name;"
+	cur.execute(qry)
+	while i < N:
+	    tup = cur.fetchone()
+	    if tup == None:
+	        break
+	    name, count = tup
+	    print(str(count) + ' ' + str(name))
+	    i += 1
+	
+except psycopg2.Error as err:
+	print("DB error: ", err)
+finally:
+	if db:
+		db.close()

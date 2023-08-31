@@ -1,0 +1,158 @@
+# COMP3311 22T1 Ass2 ... get Name's biography/filmography
+
+import sys
+import psycopg2
+
+# define any local helper functions here
+
+# set up some globals
+
+usage = "Usage: q4.py 'NamePattern' [Year]"
+db = None
+
+# process command-line args
+
+argc = len(sys.argv)
+
+# manipulate database
+if argc == 1:
+    print(usage)
+    sys.exit()
+try:
+    db = psycopg2.connect("dbname=imdb")
+	# ... add your code here ...
+    cur = db.cursor()
+    result = []
+    if argc == 2 :
+        qry = """
+        select * from Names where name ~* %s
+        order by name, birth_year, id asc;
+        """
+        pattern = '.*' + str(sys.argv[1]) + '.*'
+        cur.execute(qry, [pattern])
+        result = cur.fetchall()
+    elif argc == 3 :
+        if not sys.argv[2].isnumeric():
+            print(usage)
+            sys.exit()
+        qry = """
+        select * from Names 
+        where name ~* %s and birth_year = %s
+        order by name, birth_year, id asc;
+        """
+        pattern = '.*' + str(sys.argv[1]) + '.*'
+        year = sys.argv[2]
+        cur.execute(qry, [pattern, year])
+        result = cur.fetchall()
+	
+    if len(result) > 1 :
+        print('Names matching ' + '\'' + sys.argv[1] + '\'', end = '')
+        if argc == 2:
+            print()
+        elif argc == 3:
+            print(' ' + sys.argv[2])
+        print('===============')
+        for tup in result:
+            nameid, name, birth, death = tup
+            print(name + ' (', end='')
+            if birth == None:
+                print('???)')
+            elif birth != None and death == None:
+                print(str(birth) + '-)')
+            elif birth != None and death != None:
+                print(str(birth) + '-' + str(death) + ')')
+    # no item matched
+    elif len(result) == 0 :
+        print('No name matching ' + '\'' + sys.argv[1] + '\'', end = '')
+        if argc == 2:
+            print()
+        elif argc == 3:
+            print(' ' + sys.argv[2])
+    # match 1 result
+    elif len(result) == 1 :
+        print('Filmography for ', end = '')
+        name_id = ''
+        for tup in result:
+            nameid, name, birth, death = tup
+            name_id = str(nameid)
+            print(name + ' (', end='')
+            if birth == None:
+                print('???)')
+            elif birth != None and death == None:
+                print(str(birth) + '-)')
+            elif birth != None and death != None:
+                print(str(birth) + '-' + str(death) + ')')
+            print('===============')
+        # part 1
+        # query to average rating
+        qry = """
+        select avg(rating) from Movies m, principals p 
+        where p.name_id = %s and p.movie_id = m.id;
+        """
+        cur.execute(qry, [name_id])
+        result = cur.fetchone()
+        if result[0] == None :
+            print('Personal Rating: 0')
+            print('Top 3 Genres:')
+        else :
+            rating = float(result[0])
+            rating = round(rating, 1)
+            print('Personal Rating: ' + str(rating))
+            print('Top 3 Genres:')
+        # query to statistic of genre               
+        qry = """
+        select mg.genre, count(mg.genre) 
+        from movie_genres mg, principals p 
+        where p.name_id = %s and p.movie_id = mg.movie_id 
+        group by mg.genre order by count desc, mg.genre;
+        """
+        cur.execute(qry, [name_id])
+        for i in range(3):
+            result = cur.fetchone()
+            if result == None:
+                break;
+            genre, count = result
+            print(' ' + genre)
+        print('===============')
+        # part 2
+        # query to find principal movies
+        qry = """
+        select id, title, start_year 
+        from movies m, principals p where p.name_id = %s and m.id = p.movie_id 
+        order by start_year, title;       
+        """    
+        cur.execute(qry, [name_id])
+        result = cur.fetchall()
+        for tup in result:
+            movieid, title, year = tup
+            print(title + ' (' + str(year) + ')')
+            # query to acting_roles
+            qry = """
+            select a.played from acting_roles a 
+            where a.name_id = %s and a.movie_id = %s
+            order by a.played;
+            """
+            cur.execute(qry, [name_id, str(movieid)])
+            result2 = cur.fetchall()
+            for tup2 in result2:
+                played = tup2[0]
+                print(' playing ' + played)
+            # query to crew_roles
+            qry = """
+            select a.role from crew_roles a 
+            where a.name_id = %s and a.movie_id = %s
+            order by a.role;
+            """
+            cur.execute(qry, [name_id, str(movieid)])    
+            result2 = cur.fetchall()
+            for tup2 in result2:
+                role = tup2[0]
+                role = role.replace('_', ' ')
+                print(' as ' + role.capitalize())
+        
+except psycopg2.Error as err:
+    print("DB error: ", err)
+finally:
+    if db:
+        db.close()
+
